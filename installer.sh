@@ -5,9 +5,7 @@ MAINURL="https://raw.githubusercontent.com/popking159/"
 PKGDIR='ssupport/main/'
 echo "Downloading subssupport..."
 wget -T 2 $MAINURL$PKGDIR$IPKFILE -P "/tmp/"
-sleep 2
 IPKTMPFILE="/tmp/"$IPKFILE
 echo "Installing subssupport..."
 opkg install --force-reinstall $IPKTMPFILE
-sleep 2
 exit 0
