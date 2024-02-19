@@ -1,5 +1,5 @@
 #!/bin/sh
-##setup command=wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/installer.sh -O - | /bin/sh
+##setup command=wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/subssupport-install.sh -O - | /bin/sh
 
 rm -r /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport
 echo "downloading SubsSupport..."
