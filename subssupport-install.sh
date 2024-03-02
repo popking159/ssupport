@@ -23,7 +23,7 @@ sleep 3
 sed -i "/subtitlesSupport/d" $SETTINGS
 {
     echo "config.plugins.subtitlesSupport.encodingsGroup=Arabic"
-	echo "config.plugins.subtitlesSupport.external.font.size=50"
+	echo "config.plugins.subtitlesSupport.external.font.size=52"
 	echo "config.plugins.subtitlesSupport.search.edna_cz.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.itasa.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.lang1=ar"
