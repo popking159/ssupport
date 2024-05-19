@@ -34,7 +34,6 @@ sed -i "/subtitlesSupport/d" $SETTINGS
 	echo "config.plugins.subtitlesSupport.search.podnapisi.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.prijevodionline.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.serialzone_cz.enabled=False"
-	echo "config.plugins.subtitlesSupport.search.subscene.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.subtitles_gr.enabled=False"
         echo "config.plugins.subtitlesSupport.search.subdl_com.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.subtitlist.enabled=False"
