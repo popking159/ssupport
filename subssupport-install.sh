@@ -11,7 +11,7 @@ sync
 echo "#########################################################"
 echo "#########################################################"
 echo "Installing dependency files"
-opkg install perl-module-io-zlib python3-codecs python3-compression python3-core python3-difflib python3-json python3-requests python3-xmlrpc unrar
+opkg install python3-codecs python3-compression python3-core python3-difflib python3-json python3-requests python3-xmlrpc unrar
 
 SETTINGS="/etc/enigma2/settings"
 echo "Adding new settings for subssupport..."
