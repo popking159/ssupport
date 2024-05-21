@@ -14,6 +14,7 @@ if [ -d /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport ]; then
 echo "> removing package please wait..."
 sleep 3s 
 rm -rf /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport > /dev/null 2>&1
+fi
 
 status='/var/lib/opkg/status'
 package='enigma2-plugin-extensions-subssupport'
