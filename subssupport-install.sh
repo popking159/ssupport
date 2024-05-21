@@ -25,7 +25,6 @@ fi
 
 sleep 3s
 
-else
 echo "downloading SubsSupport..."
 wget -O  /var/volatile/tmp/SubsSupport.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupport.tar.gz
 echo "Installing SubsSupport..."
