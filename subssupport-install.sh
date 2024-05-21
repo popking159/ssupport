@@ -1,7 +1,30 @@
 #!/bin/sh
 ##setup command=wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/subssupport-install.sh -O - | /bin/sh
 
-rm -r /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport
+echo ''
+echo '************************************************************'
+echo "**                       STARTED                          **"
+echo '************************************************************'
+echo "**                  Uploaded by: MNASR                    **"
+echo "************************************************************"
+echo ''
+sleep 3s
+
+if [ -d /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport ]; then
+echo "> removing package please wait..."
+sleep 3s 
+rm -rf /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport > /dev/null 2>&1
+
+status='/var/lib/opkg/status'
+package='enigma2-plugin-extensions-subssupport'
+
+if grep -q $package $status; then
+opkg remove $package > /dev/null 2>&1
+fi
+
+sleep 3s
+
+else
 echo "downloading SubsSupport..."
 wget -O  /var/volatile/tmp/SubsSupport.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupport.tar.gz
 echo "Installing SubsSupport..."
