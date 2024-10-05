@@ -52,7 +52,7 @@ sed -i "/subtitlesSupport/d" $SETTINGS
 	echo "config.plugins.subtitlesSupport.search.lang1=ar"
 	echo "config.plugins.subtitlesSupport.search.lang2=ar"
 	echo "config.plugins.subtitlesSupport.search.lang3=ar"
-	echo "config.plugins.subtitlesSupport.search.mysubs.enabled=False"
+	echo "config.plugins.subtitlesSupport.search.opensbutitles_com.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.opensubtitles.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.podnapisi.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.prijevodionline.enabled=False"
