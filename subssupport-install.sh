@@ -7,9 +7,10 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7.0 r4                  **"
+echo "**                 SubsSupport v1.7.0 r5                  **"
 echo "************************************************************"
-echo ''
+echo ' add subscene.best                                          '
+echo "************************************************************"
 sleep 3s
 
 if [ -d /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport ]; then
@@ -49,8 +50,6 @@ sed -i "/subtitlesSupport/d" $SETTINGS
 {
     echo "config.plugins.subtitlesSupport.encodingsGroup=Arabic"
 	echo "config.plugins.subtitlesSupport.external.font.size=52"
-	echo "config.plugins.subtitlesSupport.search.edna_cz.enabled=False"
-	echo "config.plugins.subtitlesSupport.search.itasa.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.lang1=ar"
 	echo "config.plugins.subtitlesSupport.search.lang2=ar"
 	echo "config.plugins.subtitlesSupport.search.lang3=ar"
@@ -58,11 +57,7 @@ sed -i "/subtitlesSupport/d" $SETTINGS
 	echo "config.plugins.subtitlesSupport.search.opensubtitles.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.podnapisi.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.prijevodionline.enabled=False"
-	echo "config.plugins.subtitlesSupport.search.serialzone_cz.enabled=False"
-	echo "config.plugins.subtitlesSupport.search.subtitles_gr.enabled=False"
  	echo "config.plugins.subtitlesSupport.search.subdl_com.enabled=False"
- 	echo "config.plugins.subtitlesSupport.search.subscene.enabled=False"
-	echo "config.plugins.subtitlesSupport.search.subtitlist.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.titlovi.enabled=False"
 	echo "config.plugins.subtitlesSupport.search.titulky_com.enabled=False"
 	
