@@ -7,9 +7,10 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7.0 r5                  **"
+echo "**                 SubsSupport v1.7.0 r6                  **"
 echo "************************************************************"
-echo ' add subscene.best                                          '
+echo ' add subsource.net                                          '
+echo ' add novalermora                                            '
 echo "************************************************************"
 sleep 3s
 
