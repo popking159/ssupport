@@ -7,10 +7,10 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7.0 r6                  **"
+echo "**                 SubsSupport v1.7.0 r7                  **"
 echo "************************************************************"
-echo ' add subsource.net                                          '
-echo ' add novalermora                                            '
+echo ' add subdl.com                                              '
+echo ' add elsubtitle " still need some adjustment "              '
 echo "************************************************************"
 sleep 3s
 
