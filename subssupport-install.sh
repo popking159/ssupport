@@ -16,7 +16,7 @@ sleep 3s
 
 if [ -d /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport ]; then
 echo "> removing package please wait..."
-sleep 3s 
+sleep 2s 
 rm -rf /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport > /dev/null 2>&1
 fi
 
@@ -27,20 +27,21 @@ if grep -q $package $status; then
 opkg remove $package > /dev/null 2>&1
 fi
 
-sleep 3s
+sleep 2s
 
 echo "downloading SubsSupport..."
 wget -O  /var/volatile/tmp/SubsSupport.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupport.tar.gz
 echo "Installing SubsSupport..."
 tar -xzf /var/volatile/tmp/SubsSupport.tar.gz -C /
 rm -rf /var/volatile/tmp/SubsSupport.tar.gz > /dev/null 2>&1
-echo "adjust SubsSupport with NewVirtualKeyBoard..."
-sleep 3s
+
+sleep 2s
 cd /tmp 
 if [ -d /usr/lib/enigma2/python/Plugins/SystemPlugins/NewVirtualKeyBoard ]; then
-	wget "https://github.com/popking159/ssupport/raw/main/subtitles.py"
-	rm -f /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subtitles.py > /dev/null 2>&1
-	mv subtitles.py /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport  > /dev/null 2>&1
+echo "adjust SubsSupport with NewVirtualKeyBoard..."
+wget "https://github.com/popking159/ssupport/raw/main/subtitles.py"
+rm -f /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subtitles.py > /dev/null 2>&1
+mv subtitles.py /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport  > /dev/null 2>&1
 fi
 cd ..
 sync
