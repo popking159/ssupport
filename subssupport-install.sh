@@ -33,10 +33,12 @@ echo "downloading SubsSupport..."
 wget -O  /var/volatile/tmp/SubsSupport.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupport.tar.gz
 echo "Installing SubsSupport..."
 tar -xzf /var/volatile/tmp/SubsSupport.tar.gz -C /
-rm -rf /var/volatile/tmp/SubsSupport.tar.gz
+rm -rf /var/volatile/tmp/SubsSupport.tar.gz > /dev/null 2>&1
+echo "adjust SubsSupport with NewVirtualKeyBoard..."
+sleep 3s
 cd /tmp 
 if [ -d /usr/lib/enigma2/python/Plugins/SystemPlugins/NewVirtualKeyBoard ]; then
-	wget "https://raw.githubusercontent.com/popking159/ssupport/blob/main/subtitles.py"
+	wget "https://github.com/popking159/ssupport/raw/main/subtitles.py"
 	rm -f /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subtitles.py > /dev/null 2>&1
 	mv subtitles.py /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport  > /dev/null 2>&1
 fi
