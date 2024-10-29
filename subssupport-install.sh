@@ -7,10 +7,10 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7.0 r7                  **"
+echo "**                 SubsSupport v1.7.0 r8                  **"
 echo "************************************************************"
-echo ' add subdl.com                                              '
-echo ' add elsubtitle " still need some adjustment "              '
+echo ' fix tvshow search in subscene.best                       **"                      '
+echo ' improve arabic subtitles by removing (diacritics)        **"
 echo "************************************************************"
 sleep 3s
 
