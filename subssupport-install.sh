@@ -7,9 +7,10 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7.0 r9                  **"
+echo "**                 SubsSupport v1.7.0 r10                 **"
 echo "************************************************************"
-echo '** fix Subtitlesmora                                      **'
+echo "** fix opensubtitles.org                                  **"
+echo "** add opensubtitles mora for arabic subtitles            **"
 echo "************************************************************"
 sleep 3s
 
