@@ -11,11 +11,11 @@ echo "**               SubsSupport v1.7.0 r1 py2                **"
 echo "************************************************************"
 echo "** support py2                                            **"
 echo "************************************************************"
-sleep 3s
+sleep 3
 
 if [ -d /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport ]; then
 echo "> removing package please wait..."
-sleep 2s 
+sleep 2
 rm -rf /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport > /dev/null 2>&1
 fi
 
@@ -26,7 +26,7 @@ if grep -q $package $status; then
 opkg remove $package > /dev/null 2>&1
 fi
 
-sleep 2s
+sleep 2
 
 echo "downloading SubsSupport..."
 wget -O  /var/volatile/tmp/SubsSupportpy2.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupportpy2.tar.gz
@@ -34,7 +34,7 @@ echo "Installing SubsSupport..."
 tar -xzf /var/volatile/tmp/SubsSupportpy2.tar.gz -C /
 rm -rf /var/volatile/tmp/SubsSupportpy2.tar.gz > /dev/null 2>&1
 
-sleep 2s
+sleep 2
 # cd /tmp 
 # if [ -d /usr/lib/enigma2/python/Plugins/SystemPlugins/NewVirtualKeyBoard ]; then
 # echo "adjust SubsSupport with NewVirtualKeyBoard..."
@@ -51,7 +51,7 @@ opkg install python-codecs python-compression python-core python-difflib python-
 
 
 # ============================================================================================================
-sleep 2
+sleep 
 sync
 echo "==================================================================="
 echo "===                          FINISHED                           ==="
