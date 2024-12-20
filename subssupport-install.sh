@@ -7,10 +7,8 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7.0 r10                 **"
+echo "**           SubsSupport v2.1-r0-pure2-mod-mnasr          **"
 echo "************************************************************"
-echo "** fix opensubtitles.org                                  **"
-echo "** add opensubtitles mora for arabic subtitles            **"
 echo "************************************************************"
 sleep 3s
 
@@ -30,10 +28,10 @@ fi
 sleep 2s
 
 echo "downloading SubsSupport..."
-wget -O  /var/volatile/tmp/SubsSupport.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupport.tar.gz
+wget -O  /var/volatile/tmp/SubsSupportcore.tar.gz https://github.com/popking159/ssupport/raw/main/SubsSupportcore.tar.gz
 echo "Installing SubsSupport..."
-tar -xzf /var/volatile/tmp/SubsSupport.tar.gz -C /
-rm -rf /var/volatile/tmp/SubsSupport.tar.gz > /dev/null 2>&1
+tar -xzf /var/volatile/tmp/SubsSupportcore.tar.gz -C /
+rm -rf /var/volatile/tmp/SubsSupportcore.tar.gz > /dev/null 2>&1
 
 sleep 2s
 cd /tmp 
