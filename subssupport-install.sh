@@ -34,14 +34,6 @@ tar -xzf /var/volatile/tmp/SubsSupportcore.tar.gz -C /
 rm -rf /var/volatile/tmp/SubsSupportcore.tar.gz > /dev/null 2>&1
 
 sleep 2s
-cd /tmp 
-if [ -d /usr/lib/enigma2/python/Plugins/SystemPlugins/NewVirtualKeyBoard ]; then
-echo "adjust SubsSupport with NewVirtualKeyBoard..."
-wget "https://github.com/popking159/ssupport/raw/main/subtitles.py"
-rm -f /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subtitles.py > /dev/null 2>&1
-mv subtitles.py /usr/lib/enigma2/python/Plugins/Extensions/SubsSupport  > /dev/null 2>&1
-fi
-cd ..
 sync
 echo "#########################################################"
 echo "#########################################################"
