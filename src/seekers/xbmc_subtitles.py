@@ -143,6 +143,20 @@ class SubscenebestSeeker(XBMCSubtitlesAdapter):
     default_settings = {}
 
 try:
+    from .Sub_Scene_com import sub_scene_com
+except ImportError as e:
+    sub_scene_com = e
+
+class Sub_Scene_comSeeker(XBMCSubtitlesAdapter):
+    id = 'sub_scene_com'
+    module = sub_scene_com
+    if isinstance(module, Exception):
+        error, module = module, None
+    provider_name = 'Sub_Scene_com'
+    supported_langs = allLang()
+    default_settings = {}
+
+try:
     from .Subsource import subsource
 except ImportError as e:
     subsource = e
