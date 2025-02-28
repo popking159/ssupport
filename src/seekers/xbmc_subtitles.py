@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import os
 import time
 import six
-
 from .seeker import BaseSeeker
 from .utilities import languageTranslate, allLang, toString
 
@@ -127,6 +126,19 @@ class TitulkyComSeeker(XBMCSubtitlesAdapter):
     default_settings = {'Titulkyuser': {'label': _("Username"), 'type': 'text', 'default': "", 'pos': 0},
                         'Titulkypass': {'label': _("Password"), 'type': 'password', 'default': "", 'pos': 1}, }
 
+try:
+    from .LocalDrive import localdrive
+except ImportError as e:
+    localdrive = e
+
+class LocalDriveSeeker(XBMCSubtitlesAdapter):
+    module = localdrive
+    if isinstance(module, Exception):
+        error, module = module, None
+    id = 'localdrive'
+    provider_name = 'LocalDrive'
+    supported_langs = allLang()
+    default_settings = {'LocalSearchPath': {'label': _("Search Path"), 'type': 'text', 'default': "", 'pos': 0} }
 
 try:
     from .Subscenebest import subscenebest
