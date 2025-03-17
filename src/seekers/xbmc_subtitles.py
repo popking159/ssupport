@@ -13,6 +13,8 @@ from .utilities import languageTranslate, allLang, toString
 from . import _
 
 
+
+
 class XBMCSubtitlesAdapter(BaseSeeker):
     module = None
 
@@ -138,7 +140,7 @@ class LocalDriveSeeker(XBMCSubtitlesAdapter):
     id = 'localdrive'
     provider_name = 'LocalDrive'
     supported_langs = allLang()
-    default_settings = {'LocalSearchPath': {'label': _("Search Path"), 'type': 'text', 'default': "", 'pos': 0} }
+    default_settings = {'LocalSearchPath': {'label': _("Search Path"), 'type': 'text', 'default': "/media/hdd/subs", 'pos': 0} }
 
 try:
     from .Subscenebest import subscenebest
@@ -182,6 +184,19 @@ class SubsourceSeeker(XBMCSubtitlesAdapter):
     supported_langs = allLang()
     default_settings = {}
 
+try:
+    from .Foursub import foursub
+except ImportError as e:
+    foursub = e
+    
+class FoursubSeeker(XBMCSubtitlesAdapter):
+    id = 'foursub'
+    module = foursub
+    if isinstance(module, Exception):
+        error, module = module, None
+    provider_name = 'Foursub'
+    supported_langs = allLang()
+    default_settings = {}
 
 try:
     from .OpenSubtitles import opensubtitles
@@ -234,37 +249,19 @@ try:
 except ImportError as e:
     opensubtitles2 = e
 
-
 class OpenSubtitles2Seeker(XBMCSubtitlesAdapter):
     module = opensubtitles2
     if isinstance(module, Exception):
         error, module = module, None
-        log(__name__, f"Failed to load OpenSubtitles2 module: {error}")
     
-    id = 'opensubtitles.com'  # Fixed typo
+    id = 'opensubtitles.com'
     provider_name = 'OpenSubtitles.com'
     supported_langs = allLang()
     default_settings = {
-        'OpenSubtitles_username': {'label': _("USERNAME"), 'type': 'text', 'default': "", 'pos': 0},
-        'OpenSubtitles_password': {'label': _("PASSWORD"), 'type': 'text', 'default': "", 'pos': 1},
-        'OpenSubtitles_API_KEY': {'label': _("API_KEY"), 'type': 'text', 'default': '', 'pos': 2}
+        'OpenSubtitles_username': {'label': "USERNAME", 'type': 'text', 'default': "", 'pos': 0},
+        'OpenSubtitles_password': {'label': "PASSWORD", 'type': 'text', 'default': "", 'pos': 1},
+        'OpenSubtitles_API_KEY': {'label': "API_KEY", 'type': 'text', 'default': '', 'pos': 2}
     }
-
-    def __init__(self, *args, **kwargs):
-        super(OpenSubtitles2Seeker, self).__init__(*args, **kwargs)
-        if self.module is None:
-            raise ImportError("OpenSubtitles2 module could not be loaded.")
-
-    def _search(self, title, filepath, langs, season, episode, tvshow, year):
-        if self.module is None:
-            return {'list': [], 'session_id': '', 'msg': 'OpenSubtitles2 module not loaded'}
-        return super(OpenSubtitles2Seeker, self)._search(title, filepath, langs, season, episode, tvshow, year)
-
-    def _download(self, subtitles, selected_subtitle, path=None):
-        if self.module is None:
-            return False, '', ''
-        return super(OpenSubtitles2Seeker, self)._download(subtitles, selected_subtitle, path)
-
 
 try:
     from .Podnapisi import podnapisi
@@ -284,6 +281,7 @@ class PodnapisiSeeker(XBMCSubtitlesAdapter):
                         'PNmatch': {'label': _("Send and search movie hashes"), 'type': 'yesno', 'default': 'false', 'pos': 2}}
 
 
+
 try:
     from .Subdl import subdl
 except ImportError as e:
@@ -293,61 +291,21 @@ class SubdlSeeker(XBMCSubtitlesAdapter):
     module = subdl
     if isinstance(module, Exception):
         error, module = module, None
+
     id = 'subdl.com'
     provider_name = 'Subdl'
-    supported_langs = ["en",
-                                            "fr",
-                                            "hu",
-                                            "cs",
-                                            "pl",
-                                            "sk",
-                                            "pt",
-                                            "pt-br",
-                                            "es",
-                                            "el",
-                                            "ar",
-                                            'sq',
-                                            "hy",
-                                            "ay",
-                                            "bs",
-                                            "bg",
-                                            "ca",
-                                            "zh",
-                                            "hr",
-                                            "da",
-                                            "nl",
-                                            "eo",
-                                            "et",
-                                            "fi",
-                                            "gl",
-                                            "ka",
-                                            "de",
-                                            "he",
-                                            "hi",
-                                            "is",
-                                            "id",
-                                            "it",
-                                            "ja",
-                                            "kk",
-                                            "ko",
-                                            "lv",
-                                            "lt",
-                                            "lb",
-                                            "mk",
-                                            "ms",
-                                            "no",
-                                            "oc",
-                                            "fa",
-                                            "ro",
-                                            "ru",
-                                            "sr",
-                                            "sl",
-                                            "sv",
-                                            "th",
-                                            "tr",
-                                            "uk",
-                                            "vi"]
-    default_settings = {}
+    
+    supported_langs = [
+        "en", "fr", "hu", "cs", "pl", "sk", "pt", "pt-br", "es", "el", "ar", "sq", "hy", "ay", "bs", "bg",
+        "ca", "zh", "hr", "da", "nl", "eo", "et", "fi", "gl", "ka", "de", "he", "hi", "is", "id", "it", "ja",
+        "kk", "ko", "lv", "lt", "lb", "mk", "ms", "no", "oc", "fa", "ro", "ru", "sr", "sl", "sv", "th", "tr",
+        "uk", "vi"
+    ]
+
+    default_settings = {
+        'Subdl_API_KEY': {'label': "API_KEY", 'type': 'text', 'default': '', 'pos': 2}
+    }
+
     movie_search = True
     tvshow_search = True
 
@@ -502,3 +460,5 @@ class ElsubtitleSeeker(XBMCSubtitlesAdapter):
                                             "uk",
                                             "vi"]
     default_settings = {}   
+
+

@@ -88,7 +88,6 @@ def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, 
     print(DOWNLOAD_PATH)
     search_paths = [DOWNLOAD_PATH, "/tmp/"]
     subtitles_list = []
-    print(subtitles_list)
     msg = ""
 
     title_key = get_first_word(title)
@@ -96,16 +95,17 @@ def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, 
 
     for path in search_paths:
         if os.path.exists(path):
-            for file in os.listdir(path):
-                if re.match(filename_pattern, file, re.IGNORECASE):
-                    language_name = extract_language(file)
-                    subtitles_list.append({
-                        "filename": file,
-                        "path": os.path.join(path, file),
-                        "language_name": language_name,  # Now always a string
-                        "language_flag": LANGUAGE_MAP.get(language_name, ("Unknown", "flags/unknown.gif"))[1],
-                        "sync": True
-                    })
+            for root, _, files in os.walk(path):  # Recursively walk through directories
+                for file in files:
+                    if re.match(filename_pattern, file, re.IGNORECASE):
+                        language_name = extract_language(file)
+                        subtitles_list.append({
+                            "filename": file,
+                            "path": os.path.join(root, file),
+                            "language_name": language_name,
+                            "language_flag": LANGUAGE_MAP.get(language_name, ("Unknown", "flags/unknown.gif"))[1],
+                            "sync": True
+                        })
 
     return subtitles_list, "", msg
 
