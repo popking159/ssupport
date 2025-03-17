@@ -30,7 +30,7 @@ try:
     from .seekers import SubtitlesDownloadError, SubtitlesSearchError, \
         SubtitlesErrors, SubtitlesmoraSeeker, NovalermoraSeeker, ElsubtitleSeeker, OpenSubtitles2Seeker, TitulkyComSeeker, \
         OpenSubtitlesSeeker, OpenSubtitlesMoraSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
-         TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker
+         TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker, FoursubSeeker
     from .seekers.seeker import BaseSeeker
     from .seekers.utilities import languageTranslate, langToCountry, \
         getCompressedFileType, detectSearchParams
@@ -39,7 +39,7 @@ except (ValueError, ImportError):
     from seekers import SubtitlesDownloadError, SubtitlesSearchError, \
         SubtitlesErrors, SubtitlesmoraSeeker, NovalermoraSeeker, ElsubtitleSeeker, OpenSubtitles2Seeker, TitulkyComSeeker, \
         OpenSubtitlesMoraSeeker, OpenSubtitlesSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
-         TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker
+         TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker, FoursubSeeker
     from seekers.seeker import BaseSeeker
     from seekers.utilities import languageTranslate, langToCountry, \
         getCompressedFileType, detectSearchParams
@@ -50,16 +50,17 @@ import six
 
 SUBTITLES_SEEKERS = []
 SUBTITLES_SEEKERS.append(LocalDriveSeeker)
-SUBTITLES_SEEKERS.append(Sub_Scene_comSeeker)
-SUBTITLES_SEEKERS.append(NovalermoraSeeker)
+SUBTITLES_SEEKERS.append(SubsourceSeeker)
+SUBTITLES_SEEKERS.append(SubdlSeeker)
+SUBTITLES_SEEKERS.append(OpenSubtitles2Seeker)
 SUBTITLES_SEEKERS.append(SubtitlesmoraSeeker)
+SUBTITLES_SEEKERS.append(NovalermoraSeeker)
+SUBTITLES_SEEKERS.append(FoursubSeeker)
+SUBTITLES_SEEKERS.append(Sub_Scene_comSeeker)
 SUBTITLES_SEEKERS.append(SubscenebestSeeker)
 SUBTITLES_SEEKERS.append(OpenSubtitlesSeeker)
 SUBTITLES_SEEKERS.append(OpenSubtitlesMoraSeeker)
 SUBTITLES_SEEKERS.append(MySubsSeeker)
-SUBTITLES_SEEKERS.append(SubsourceSeeker)
-SUBTITLES_SEEKERS.append(OpenSubtitles2Seeker)
-SUBTITLES_SEEKERS.append(SubdlSeeker)
 SUBTITLES_SEEKERS.append(ElsubtitleSeeker)
 SUBTITLES_SEEKERS.append(TitulkyComSeeker)
 SUBTITLES_SEEKERS.append(PodnapisiSeeker)
