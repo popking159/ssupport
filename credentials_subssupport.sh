@@ -15,6 +15,19 @@ echo -e "${GREEN}===                     Script by MNASR                    ===$
 echo -e "${GREEN}==============================================================${RESET}"
 sleep 3  # Pause for 3 seconds
 
+# Check if all arguments are provided
+if [ "$#" -ne 5 ]; then
+    echo -e "${RED}Usage: $0 <OpenSubtitles_API_KEY> <OpenSubtitles_username> <OpenSubtitles_password> <Subdl_API_KEY> <downloadPath>${RESET}"
+    exit 1
+fi
+
+# Assign arguments to variables
+OpenSubtitles_API_KEY="$1"
+OpenSubtitles_username="$2"
+OpenSubtitles_password="$3"
+Subdl_API_KEY="$4"
+downloadPath="$5"
+
 SETTINGS="/etc/enigma2/settings"
 BACKUP="$SETTINGS.bak"
 
@@ -28,22 +41,6 @@ echo ""
 init 4
 sleep 2
 
-# Prompt user for credentials
-echo -e "${RED}Enter OpenSubtitles API Key:${RESET}"
-read OpenSubtitles_API_KEY
-
-echo -e "${BLUE}Enter OpenSubtitles Username:${RESET}"
-read OpenSubtitles_username
-
-echo -e "${BLUE}Enter OpenSubtitles Password (hidden input):${RESET}"
-read -s OpenSubtitles_password
-
-echo -e "${RED}Enter Subdl API Key:${RESET}"
-read Subdl_API_KEY
-
-echo -e "${GREEN}Enter Download Path (e.g., /hdd/subs/):${RESET}"
-read downloadPath
-
 # Remove existing subtitle support settings
 sed -i "/subtitlesSupport/d" $SETTINGS
 
@@ -56,7 +53,7 @@ sed -i "/subtitlesSupport/d" $SETTINGS
     echo "config.plugins.subtitlesSupport.search.subdl_com.Subdl_API_KEY=$Subdl_API_KEY"
     echo "config.plugins.subtitlesSupport.search.downloadPath=$downloadPath"
 
-    # Default subtitle settings (added automatically)
+    # Default subtitle settings
     echo "config.plugins.subtitlesSupport.external.background.alpha=00"
     echo "config.plugins.subtitlesSupport.external.background.enabled=True"
     echo "config.plugins.subtitlesSupport.external.background.height=3"
@@ -86,9 +83,9 @@ sleep 2
 sync
 init 3
 
-echo -e "${GREEN}==============================================================${RESET}"
-echo -e "${GREEN}===                       FINISHED                         ===${RESET}"
-echo -e "${GREEN}===                    Script by MNASR                     ===${RESET}"
-echo -e "${GREEN}==============================================================${RESET}"
+echo -e "${GREEN}===================================================================${RESET}"
+echo -e "${GREEN}===                          FINISHED                           ===${RESET}"
+echo -e "${GREEN}===                      Script by MNASR                        ===${RESET}"
+echo -e "${GREEN}===================================================================${RESET}"
 sleep 2
 exit 0
