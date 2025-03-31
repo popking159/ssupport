@@ -29,7 +29,7 @@ import re
 try:
     from .seekers import SubtitlesDownloadError, SubtitlesSearchError, \
         SubtitlesErrors, SubtitlesmoraSeeker, NovalermoraSeeker, ElsubtitleSeeker, SubtitlecatSeeker, OpenSubtitles2Seeker, TitulkyComSeeker, \
-        OpenSubtitlesSeeker, OpenSubtitlesMoraSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Moviesubtitles2Seeker, Sub_Scene_comSeeker, SubdlSeeker, \
+        OpenSubtitlesSeeker, OpenSubtitlesMoraSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
          TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker, FoursubSeeker, YtssubsSeeker
     from .seekers.seeker import BaseSeeker
     from .seekers.utilities import languageTranslate, langToCountry, \
@@ -38,7 +38,7 @@ try:
 except (ValueError, ImportError):
     from seekers import SubtitlesDownloadError, SubtitlesSearchError, \
         SubtitlesErrors, SubtitlesmoraSeeker, NovalermoraSeeker, ElsubtitleSeeker, SubtitlecatSeeker, OpenSubtitles2Seeker, TitulkyComSeeker, \
-        OpenSubtitlesMoraSeeker, OpenSubtitlesSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Moviesubtitles2Seeker, Sub_Scene_comSeeker, SubdlSeeker, \
+        OpenSubtitlesMoraSeeker, OpenSubtitlesSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
          TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker, FoursubSeeker, YtssubsSeeker
     from seekers.seeker import BaseSeeker
     from seekers.utilities import languageTranslate, langToCountry, \
@@ -50,28 +50,27 @@ import six
 
 SUBTITLES_SEEKERS = []
 SUBTITLES_SEEKERS.append(LocalDriveSeeker)
-SUBTITLES_SEEKERS.append(YtssubsSeeker)
-SUBTITLES_SEEKERS.append(SubsytsSeeker)
 SUBTITLES_SEEKERS.append(SubsourceSeeker)
 SUBTITLES_SEEKERS.append(SubdlSeeker)
 SUBTITLES_SEEKERS.append(OpenSubtitles2Seeker)
 SUBTITLES_SEEKERS.append(SubtitlesmoraSeeker)
 SUBTITLES_SEEKERS.append(NovalermoraSeeker)
 SUBTITLES_SEEKERS.append(FoursubSeeker)
+SUBTITLES_SEEKERS.append(YtssubsSeeker)
+SUBTITLES_SEEKERS.append(SubsytsSeeker)
+SUBTITLES_SEEKERS.append(IndexsubtitleSeeker)
+SUBTITLES_SEEKERS.append(MoviesubtitlesSeeker)
+SUBTITLES_SEEKERS.append(SubtitlecatSeeker)
+SUBTITLES_SEEKERS.append(ElsubtitleSeeker)
 SUBTITLES_SEEKERS.append(Sub_Scene_comSeeker)
 SUBTITLES_SEEKERS.append(SubscenebestSeeker)
 SUBTITLES_SEEKERS.append(OpenSubtitlesSeeker)
 SUBTITLES_SEEKERS.append(OpenSubtitlesMoraSeeker)
 SUBTITLES_SEEKERS.append(MySubsSeeker)
-SUBTITLES_SEEKERS.append(SubtitlecatSeeker)
-SUBTITLES_SEEKERS.append(ElsubtitleSeeker)
 SUBTITLES_SEEKERS.append(TitulkyComSeeker)
 SUBTITLES_SEEKERS.append(PodnapisiSeeker)
 SUBTITLES_SEEKERS.append(TitloviSeeker)
 SUBTITLES_SEEKERS.append(PrijevodiOnlineSeeker)
-SUBTITLES_SEEKERS.append(IndexsubtitleSeeker)
-SUBTITLES_SEEKERS.append(MoviesubtitlesSeeker)
-SUBTITLES_SEEKERS.append(Moviesubtitles2Seeker)
 
 
 
