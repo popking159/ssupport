@@ -12,9 +12,6 @@ from .utilities import languageTranslate, allLang, toString
 
 from . import _
 
-
-
-
 class XBMCSubtitlesAdapter(BaseSeeker):
     module = None
 
@@ -125,21 +122,7 @@ class SubtitlecatSeeker(XBMCSubtitlesAdapter):
     supported_langs = allLang()
     default_settings = {}
 
-try:
-    from .Titulky import titulkycom
-except ImportError as e:
-    titulkycom = e
 
-
-class TitulkyComSeeker(XBMCSubtitlesAdapter):
-    module = titulkycom
-    if isinstance(module, Exception):
-        error, module = module, None
-    id = 'titulky.com'
-    provider_name = 'Titulky.com'
-    supported_langs = ['sk', 'cs']
-    default_settings = {'Titulkyuser': {'label': _("Username"), 'type': 'text', 'default': "", 'pos': 0},
-                        'Titulkypass': {'label': _("Password"), 'type': 'password', 'default': "", 'pos': 1}, }
 
 try:
     from .Ytssubs import ytssubs
@@ -198,6 +181,8 @@ class Sub_Scene_comSeeker(XBMCSubtitlesAdapter):
     provider_name = 'Sub_Scene_com'
     supported_langs = allLang()
     default_settings = {}
+
+
 
 try:
     from .Subsource import subsource
@@ -425,10 +410,76 @@ class MySubsSeeker(XBMCSubtitlesAdapter):
     default_settings = {}
 
 try:
+    from .Subsyts import subsyts
+except ImportError as e:
+    subsyts = e
+
+class SubsytsSeeker(XBMCSubtitlesAdapter):
+    module = subsyts
+    if isinstance(module, Exception):
+        error, module = module, None
+    id = 'subsyts'
+    provider_name = 'Subsyts'
+    supported_langs = ["en",
+                                            "fr",
+                                            "hu",
+                                            "cs",
+                                            "pl",
+                                            "sk",
+                                            "pt",
+                                            "pt-br",
+                                            "es",
+                                            "el",
+                                            "ar",
+                                            'sq',
+                                            "hy",
+                                            "ay",
+                                            "bs",
+                                            "bg",
+                                            "ca",
+                                            "zh",
+                                            "hr",
+                                            "da",
+                                            "nl",
+                                            "eo",
+                                            "et",
+                                            "fi",
+                                            "gl",
+                                            "ka",
+                                            "de",
+                                            "he",
+                                            "hi",
+                                            "is",
+                                            "id",
+                                            "it",
+                                            "ja",
+                                            "kk",
+                                            "ko",
+                                            "lv",
+                                            "lt",
+                                            "lb",
+                                            "mk",
+                                            "ms",
+                                            "no",
+                                            "oc",
+                                            "fa",
+                                            "ro",
+                                            "ru",
+                                            "sr",
+                                            "sl",
+                                            "sv",
+                                            "th",
+                                            "tr",
+                                            "uk",
+                                            "vi"]
+    default_settings = {}
+    movie_search = True
+    tvshow_search = True
+
+try:
     from .Elsubtitle import elsubtitle
 except ImportError as e:
     elsubtitle = e
-
 
 class ElsubtitleSeeker(XBMCSubtitlesAdapter):
     id = 'elsubtitle'
@@ -490,4 +541,217 @@ class ElsubtitleSeeker(XBMCSubtitlesAdapter):
                                             "vi"]
     default_settings = {}   
 
+try:
+    from .Titulky import titulkycom
+except ImportError as e:
+    titulkycom = e
 
+
+class TitulkyComSeeker(XBMCSubtitlesAdapter):
+    module = titulkycom
+    if isinstance(module, Exception):
+        error, module = module, None
+    id = 'titulky.com'
+    provider_name = 'Titulky.com'
+    supported_langs = ['sk', 'cs']
+    default_settings = {'Titulkyuser': {'label': _("Username"), 'type': 'text', 'default': "", 'pos': 0},
+                        'Titulkypass': {'label': _("Password"), 'type': 'password', 'default': "", 'pos': 1}, }
+
+
+try:
+    from .Moviesubtitles import moviesubtitles
+except ImportError as e:
+    moviesubtitles = e
+
+
+class MoviesubtitlesSeeker(XBMCSubtitlesAdapter):
+    id = 'moviesubtitles'
+    module = moviesubtitles
+    if isinstance(module, Exception):
+        error, module = module, None
+    provider_name = 'Moviesubtitles.org'
+    supported_langs = ["en",
+                                            "fr",
+                                            "hu",
+                                            "cs",
+                                            "pl",
+                                            "sk",
+                                            "pt",
+                                            "pt-br",
+                                            "es",
+                                            "el",
+                                            "ar",
+                                            'sq',
+                                            "hy",
+                                            "ay",
+                                            "bs",
+                                            "bg",
+                                            "ca",
+                                            "zh",
+                                            "hr",
+                                            "da",
+                                            "nl",
+                                            "eo",
+                                            "et",
+                                            "fi",
+                                            "gl",
+                                            "ka",
+                                            "de",
+                                            "he",
+                                            "hi",
+                                            "is",
+                                            "id",
+                                            "it",
+                                            "ja",
+                                            "kk",
+                                            "ko",
+                                            "lv",
+                                            "lt",
+                                            "lb",
+                                            "mk",
+                                            "ms",
+                                            "no",
+                                            "oc",
+                                            "fa",
+                                            "ro",
+                                            "ru",
+                                            "sr",
+                                            "sl",
+                                            "sv",
+                                            "th",
+                                            "tr",
+                                            "uk",
+                                            "vi"]
+    default_settings = {}
+
+try:
+    from .Moviesubtitles2  import moviesubtitles2 
+except ImportError as e:
+    moviesubtitles2 = e
+
+
+class Moviesubtitles2Seeker(XBMCSubtitlesAdapter):
+    id = 'moviesubtitles2'
+    module = moviesubtitles2
+    if isinstance(module, Exception):
+        error, module = module, None
+    provider_name = 'Moviesubtitles.net'
+    supported_langs = ["en",
+                                            "fr",
+                                            "hu",
+                                            "cs",
+                                            "pl",
+                                            "sk",
+                                            "pt",
+                                            "pt-br",
+                                            "es",
+                                            "el",
+                                            "ar",
+                                            'sq',
+                                            "hy",
+                                            "ay",
+                                            "bs",
+                                            "bg",
+                                            "ca",
+                                            "zh",
+                                            "hr",
+                                            "da",
+                                            "nl",
+                                            "eo",
+                                            "et",
+                                            "fi",
+                                            "gl",
+                                            "ka",
+                                            "de",
+                                            "he",
+                                            "hi",
+                                            "is",
+                                            "id",
+                                            "it",
+                                            "ja",
+                                            "kk",
+                                            "ko",
+                                            "lv",
+                                            "lt",
+                                            "lb",
+                                            "mk",
+                                            "ms",
+                                            "no",
+                                            "oc",
+                                            "fa",
+                                            "ro",
+                                            "ru",
+                                            "sr",
+                                            "sl",
+                                            "sv",
+                                            "th",
+                                            "tr",
+                                            "uk",
+                                            "vi"]
+    default_settings = {}
+
+try:
+    from .Indexsubtitle import indexsubtitle
+except ImportError as e:
+    indexsubtitle = e
+
+
+class IndexsubtitleSeeker(XBMCSubtitlesAdapter):
+    id = 'indexsubtitle'
+    module = indexsubtitle
+    if isinstance(module, Exception):
+        error, module = module, None
+    provider_name = 'Indexsubtitle.cc'
+    supported_langs = ["en",
+                                            "fr",
+                                            "hu",
+                                            "cs",
+                                            "pl",
+                                            "sk",
+                                            "pt",
+                                            "pt-br",
+                                            "es",
+                                            "el",
+                                            "ar",
+                                            'sq',
+                                            "hy",
+                                            "ay",
+                                            "bs",
+                                            "bg",
+                                            "ca",
+                                            "zh",
+                                            "hr",
+                                            "da",
+                                            "nl",
+                                            "eo",
+                                            "et",
+                                            "fi",
+                                            "gl",
+                                            "ka",
+                                            "de",
+                                            "he",
+                                            "hi",
+                                            "is",
+                                            "id",
+                                            "it",
+                                            "ja",
+                                            "kk",
+                                            "ko",
+                                            "lv",
+                                            "lt",
+                                            "lb",
+                                            "mk",
+                                            "ms",
+                                            "no",
+                                            "oc",
+                                            "fa",
+                                            "ro",
+                                            "ru",
+                                            "sr",
+                                            "sl",
+                                            "sv",
+                                            "th",
+                                            "tr",
+                                            "uk",
+                                            "vi"]
+    default_settings = {}

@@ -60,14 +60,7 @@ seasons = seasons + ["Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteen
 seasons = seasons + ["Twenty-first", "Twenty-second", "Twenty-third", "Twenty-fourth", "Twenty-fifth", "Twenty-sixth",
                      "Twenty-seventh", "Twenty-eighth", "Twenty-ninth"]
 
-# Don't remove it we need it here
-subsource_languages = {
-    'Chinese BG code': 'Chinese',
-    'Brazillian Portuguese': 'Portuguese (Brazil)',
-    'Serbian': 'SerbianLatin',
-    'Ukranian': 'Ukrainian',
-    'Farsi/Persian': 'Persian'
-}
+
     
 def getSearchTitle(title, year=None):
     url = __api + "searchMovie"
@@ -160,10 +153,15 @@ def getallsubs(content, allowed_languages, filename="", search_string=""):
     if (success == True):
         for sub in all_subs:
             fullLink = sub['fullLink']
-            languagefound = sub['lang']
-            sub_id = sub['subId']
+            languagefound = sub.get('lang', None)  # Avoid KeyError
+            sub_id = sub.get('subId', None)
+
+            if not languagefound:
+                print(f"Skipping subtitle entry due to missing 'lang': {sub}")
+                continue  # Skip entries without 'lang'
+
             language_info = get_language_info(languagefound)
-            print(('language_info', language_info))
+            #print(('language_info', language_info))
             if language_info and language_info['name'] in allowed_languages:
                 link = main_url + fullLink
                 print(('link', link))
@@ -171,7 +169,7 @@ def getallsubs(content, allowed_languages, filename="", search_string=""):
                 filename = sub['releaseName']
                 subtitle_name = str(filename)
                 print(('subtitle_name', subtitle_name))
-                print(filename)
+                #print(filename)
                 rating = '0'
                 sync = False
                 if filename != "" and filename.lower() == subtitle_name.lower():
@@ -186,6 +184,7 @@ def getallsubs(content, allowed_languages, filename="", search_string=""):
                     i = i + 1
 
         subtitles.sort(key=lambda x: [not x['sync']])
+        #print(subtitles)
         return subtitles
     else:
         print("FAILED")
@@ -212,12 +211,15 @@ def search_movie(title, year, languages, filename):
 
         url = root_url + linkName
         print(("true url", url))
-        params = {"movieName": linkName}
+        # Extract the correct 3-letter language codes from get_language_info
+        unique_langs = list(set(lang_info["name"] for lang in languages if (lang_info := get_language_info(lang))))
+        params = {"langs": unique_langs, "movieName": linkName}
+        print(params)
 
         content = requests.post(__getMovie, headers=HDR, data=json.dumps(params), timeout=10).text
         if content:
             _list = getallsubs(content, languages, filename)
-            print(("_list", _list))
+            #print(("_list", _list))
             return _list
         else:
             return []

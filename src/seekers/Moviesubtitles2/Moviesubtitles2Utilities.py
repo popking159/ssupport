@@ -23,7 +23,7 @@ LANGUAGES = (
     ("Czech", "7", "cs", "cze", "8", 30209),
     ("Danish", "24", "da", "dan", "9", 30210),
     ("Dutch", "23", "nl", "dut", "10", 30211),
-    ("English", "2", "en", "eng", "11", 30212),
+    ("English", "2", "gb", "eng", "11", 30212),
     ("Estonian", "20", "et", "est", "12", 30213),
     ("Persian", "52", "fa", "per", "13", 30247),
     ("Finnish", "31", "fi", "fin", "14", 30214),
@@ -74,7 +74,7 @@ LANGUAGES = (
     ("Chinese (Traditional)", "17", "zh", "chi", "100", 30207),
     ("Chinese (Simplified)", "17", "zh", "chi", "100", 30207))
 
-foursub_languages = {
+moviesubtitles2_languages = {
     'Chinese BG code': 'Chinese',
     'Brazillian Portuguese': 'Portuguese (Brazil)',
     'Serbian': 'SerbianLatin',
@@ -84,8 +84,8 @@ foursub_languages = {
 
 
 def get_language_info(language):
-    if language in foursub_languages:
-        language = foursub_languages[language]
+    if language in moviesubtitles2_languages:
+        language = moviesubtitles2_languages[language]
 
     for lang in LANGUAGES:
         if lang[0] == language:

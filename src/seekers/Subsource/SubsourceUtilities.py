@@ -72,7 +72,7 @@ LANGUAGES = (
     ("Chinese (Traditional)", "17", "zh", "chi", "100", 30207),
     ("Chinese (Simplified)", "17", "zh", "chi", "100", 30207))
 
-subscene_languages = {
+subsource_languages = {
     'Chinese BG code': 'Chinese',
     'Brazillian Portuguese': 'Portuguese (Brazil)',
     'Serbian': 'SerbianLatin',
@@ -82,8 +82,8 @@ subscene_languages = {
 
 
 def get_language_info(language):
-    if language in subscene_languages:
-        language = subscene_languages[language]
+    if language in subsource_languages:
+        language = subsource_languages[language]
 
     for lang in LANGUAGES:
         if lang[0] == language:

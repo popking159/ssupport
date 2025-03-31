@@ -132,6 +132,7 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
     """Download subtitle file from 4Subscene and handle different formats."""
     subtitle_id = subtitles_list[pos]["id"]
     download_url = f"{DOWNLOAD_URL}{subtitle_id}"
+    print(download_url)
     response = requests.get(download_url)
     
     if response.status_code == 200:
