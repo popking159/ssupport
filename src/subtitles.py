@@ -1261,7 +1261,7 @@ class SubtitlesWidget(GUIComponent):
         pass
 
     def calcWidgetYPosition(self):
-        return int((self.desktopSize[1] - self.calcWidgetHeight() - self.boundYOffset) / float(100) * self.positionPercent)
+        return int((self.desktopSize[1] - self.calcWidgetHeight() - self.boundYOffset) / float(100) * self.positionPercent) + 40
 
     def calcWidgetHeight(self):
         backgroundType = config.plugins.subtitlesSupport.external.background.type.value  # Get background type
