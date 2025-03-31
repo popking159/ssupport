@@ -14,7 +14,6 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 warnings.simplefilter('ignore',InsecureRequestWarning)
 import os, os.path
 from six.moves.urllib.request import HTTPCookieProcessor, build_opener, install_opener, Request, urlopen
-from six.moves.urllib.parse import urlencode
 from six.moves import http_cookiejar
 from .MoviesubtitlesUtilities import get_language_info
 from ..utilities import languageTranslate, log, getFileSize
