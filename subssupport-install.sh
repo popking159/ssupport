@@ -1,8 +1,8 @@
 #!/bin/sh
 ##setup command=wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/subssupport-install.sh -O - | /bin/sh
 ######### Only These two lines to edit with new version ######
-version='1.7.0.18'
-description='add Indexsubtitle and Moviesubtitles providers \n add another provider for yify subtitles "Subsyts" \n more adjustment for fixed background'
+#version='1.7.0.18'
+#description='add Indexsubtitle and Moviesubtitles providers \n add another provider for yify subtitles "Subsyts" \n more adjustment for fixed background'
 ##############################################################
 echo ''
 echo '************************************************************'
