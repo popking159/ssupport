@@ -289,7 +289,7 @@ def get_subtitles_list(title, year, languageshort, languagelong, subtitles_list)
                 'rating': str(rating),
                 'no_files': 1,
                 'filename': filename,
-                'sync': False,
+                'sync': True,
                 'id': sub_id,
                 'language_flag': languageshort,
                 'language_name': languagelong
