@@ -123,7 +123,7 @@ def get_subtitles_for_media(session, csrf_token, media_id, language):
                 'id': item["id"],
                 'language_flag': language,
                 'language_name': language.capitalize(),
-                'sync': False
+                'sync': True
             })
     return subtitles
 
