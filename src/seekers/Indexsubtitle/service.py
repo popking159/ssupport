@@ -345,7 +345,7 @@ def get_subtitles_list(searchstring, title, year, languageshort, languagelong, s
                 'language_name': languagelong,
                 'rating': '0',
                 'no_files': 1,
-                'sync': False
+                'sync': True
             })
         except Exception as e:
             print(f"Error processing subtitle: {e}")
