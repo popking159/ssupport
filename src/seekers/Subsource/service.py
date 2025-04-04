@@ -164,11 +164,11 @@ def getallsubs(content, allowed_languages, filename="", search_string=""):
             #print(('language_info', language_info))
             if language_info and language_info['name'] in allowed_languages:
                 link = main_url + fullLink
-                print(('link', link))
+                #print(('link', link))
                 linkName = sub['linkName']
                 filename = sub['releaseName']
                 subtitle_name = str(filename)
-                print(('subtitle_name', subtitle_name))
+                #print(('subtitle_name', subtitle_name))
                 #print(filename)
                 rating = '0'
                 sync = False
@@ -200,21 +200,21 @@ def search_movie(title, year, languages, filename):
         movie_title = prepare_search_string(title)
         if year:
             movie_title = f"{movie_title} {year}"  # Append year to improve matching
-        print(("movie_title", movie_title))
+        #print(("movie_title", movie_title))
 
         linkName = getSearchTitle(movie_title, year)  # Now includes year in the query
-        print(("linkName", linkName))
+        #print(("linkName", linkName))
 
         if not linkName:
             print(f"No match found for {title} ({year})")
             return []
 
         url = root_url + linkName
-        print(("true url", url))
+        #print(("true url", url))
         # Extract the correct 3-letter language codes from get_language_info
         unique_langs = list(set(lang_info["name"] for lang in languages if (lang_info := get_language_info(lang))))
         params = {"langs": unique_langs, "movieName": linkName}
-        print(params)
+        #print(params)
 
         content = requests.post(__getMovie, headers=HDR, data=json.dumps(params), timeout=10).text
         if content:
@@ -231,9 +231,9 @@ def search_movie(title, year, languages, filename):
 def search_tvshow(title, season, episode, languages, filename):
     try:
         title = title.strip()
-        print(("title_search_tvshow", title))
+        #print(("title_search_tvshow", title))
         search_result = getSearchTitle_tv(title)
-        print(("search_result", search_result))
+        #print(("search_result", search_result))
 
         if not search_result:
             print(f"TV Show '{title}' not found.")
@@ -311,9 +311,9 @@ def download_subtitles (subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, 
     sub_id = subtitles_list[pos][ "sub_id" ]
     language = subtitles_list[pos][ "language_name" ]
     linkName = subtitles_list[pos][ "linkName" ]
-    print(("sub_id", sub_id))
-    print(("language", language))
-    print(("linkName", linkName))
+    #print(("sub_id", sub_id))
+    #print(("language", language))
+    #print(("linkName", linkName))
     params = {"movie":linkName,"lang":language,"id":sub_id}
     content = requests.post(__getSub, headers=HDR , data=json.dumps(params), timeout=10).text
     response_json = json.loads(content)
@@ -322,9 +322,9 @@ def download_subtitles (subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, 
         fileName = response_json['sub']['fileName']
         downloadToken = response_json['sub']['downloadToken']
         downloadlink = __download + downloadToken
-        print(("downloadlink", downloadlink))
+        #print(("downloadlink", downloadlink))
         local_tmp_file = fileName
-        print(("local_tmp_file", local_tmp_file))
+        #print(("local_tmp_file", local_tmp_file))
         log(__name__ , "%s Downloadlink: %s " % (debug_pretext, downloadlink))
         viewstate = 0
         previouspage = 0
