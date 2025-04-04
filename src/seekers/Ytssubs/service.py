@@ -88,7 +88,7 @@ def getallsubs(html_content, allowed_languages, filename=""):
                 if subtitle_name:
                     subtitles.append({
                         "filename": subtitle_name,
-                        "sync": False,  # No sync info available
+                        "sync": True,  # No sync info available
                         "link": BASE_URL + subtitle_page_link,
                         "language_name": language_info["name"],
                         "lang": language_info
