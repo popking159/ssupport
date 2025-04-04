@@ -343,7 +343,7 @@ def get_subtitles_list(searchstring, title, year, languageshort, languagelong, s
                 
             if not downloads == 0:
                 log( __name__ ,"%s Subtitles found: %s (id = %s)" % (debug_pretext, filename, id))
-                subtitles_list.append({'rating': str(rating), 'no_files': 1, 'filename': filename, 'sync': False, 'id' : id, 'language_flag': languageshort, 'language_name': languagelong})
+                subtitles_list.append({'rating': str(rating), 'no_files': 1, 'filename': filename, 'sync': True, 'id' : id, 'language_flag': languageshort, 'language_name': languagelong})
 
         except:
             pass
