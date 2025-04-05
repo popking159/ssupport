@@ -222,11 +222,13 @@ def download_subtitles (subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, 
 def get_subtitles_list(searchstring, title, year, languageshort, languagelong, subtitles_list):
     s = languagelong.strip()
     title = title.strip()
-    #search_string = prepare_search_string(title)
+    print(title)
+    search_string = title.replace(".", "+")
+    print(search_string)
     #print(("getSearchTitle", getSearchTitle))
     #print(s)
     #print(title)
-    url = '%s/search/%s' % (main_url, urllib.parse.quote_plus(searchstring))
+    url = '%s/search/%s' % (main_url, search_string)
     print(url)
     try:
         log(__name__, "%s Getting url: %s" % (debug_pretext, url))
