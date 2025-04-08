@@ -1903,7 +1903,7 @@ def PanelListEntry(name, mode):
 def PanelColorListEntry(name, value, colorName, colorValue, sizePanelX):
     res = [(name)]
     res.append(MultiContentEntryText(pos=(0, 5), size=(sizePanelX, 30), font=1, flags=RT_HALIGN_LEFT, text=name, color=colorName))
-    res.append(MultiContentEntryText(pos=(0, 5), size=(sizePanelX, 30), font=1, flags=RT_HALIGN_RIGHT, text=value, color=colorValue))
+    res.append(MultiContentEntryText(pos=(120, 5), size=(sizePanelX, 30), font=1, flags=RT_HALIGN_LEFT, text=value, color=colorValue))
     return res
 
 
@@ -2015,10 +2015,10 @@ class SubsMenu(Screen):
                 # subInfo.append(PanelColorListEntry(_("State:"),_("not loaded"), 0xDAA520, 0xffff00, 300))
             elif self.encoding and not self.newSelection:
                 # subInfo.append(PanelColorListEntry(_("State:"),_("loaded"), 0xDAA520, 0x00ff00, 300))
-                subInfo.append(PanelColorListEntry(_("Encoding:"), self.encoding, 0xDAA520, 0xffffff, 300))
+                subInfo.append(PanelColorListEntry(_("Encoding:"), self.encoding, 0xDAA520, 0xffffff, 150))
             elif not self.encoding and not self.newSelection:
                 # subInfo.append(PanelColorListEntry(_("State:"),_("not loaded"), 0xDAA520, 0xffff00, 300))
-                subInfo.append(PanelColorListEntry(_("Encoding:"), _("cannot decode"), 0xDAA520, 0xffffff, 300))
+                subInfo.append(PanelColorListEntry(_("Encoding:"), _("cannot decode"), 0xDAA520, 0xffffff, 150))
         else:
             self["subfile_label"].setText(_("None"))
             self["subfile_label"].instance.setForegroundColor(parseColor("#DAA520"))
