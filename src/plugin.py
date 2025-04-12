@@ -12,7 +12,7 @@ from .subtitles import E2SubsSeeker, SubsSearch, initSubsSettings, \
     SubsSetupGeneral, SubsSearchSettings, SubsSetupExternal, SubsSetupEmbedded
 from .subtitlesdvb import SubsSupportDVB, SubsSetupDVBPlayer
 
-
+VER = "1.7.0.19"
 def openSubtitlesSearch(session, **kwargs):
     settings = initSubsSettings().search
     eventList = []
