@@ -58,7 +58,7 @@ def getallsubs(response):
                 'link': href,
                 'downloads': download_count,
                 'language_name': languages,
-                'sync': False  # Fix KeyError by always adding this key
+                'sync': True  # Fix KeyError by always adding this key
             })
     
     return subtitles
