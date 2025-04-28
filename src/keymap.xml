@@ -36,4 +36,8 @@
 		<key id="KEY_5" mapto="applySavedDelay" flags="m" />
 		<key id="KEY_6" mapto="saveCurrentDelay" flags="m" />
 	</map>
+		<map context="NumberActions">
+		<key id="KEY_5" mapto="importsettings" flags="m" />
+		<key id="KEY_6" mapto="exportsettings" flags="m" />
+	</map>
 </keymap>

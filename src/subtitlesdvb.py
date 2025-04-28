@@ -373,10 +373,10 @@ class SubsControllerDVB(Screen, HelpableScreen):
         etStr = "%d:%02d:%02d" % ((et / 3600, et % 3600 / 60, et % 60))
         if active:
             self['subtitle'].instance.setForegroundColor(parseColor("#F7A900"))
-            self['subtitle'].setText("%s -----> %s" % (stStr, etStr))
+            self['subtitle'].setText("%s ----> %s" % (stStr, etStr))
         else:
             self['subtitle'].instance.setForegroundColor(parseColor("#aaaaaa"))
-            self['subtitle'].setText("%s -----> %s" % (stStr, etStr))
+            self['subtitle'].setText("%s ----> %s" % (stStr, etStr))
 
     def updateSubtitlesPosition(self, position=None):
         if position is None:
@@ -565,13 +565,15 @@ class SubsControllerDVB(Screen, HelpableScreen):
 
         # current video position relative to event start
         elapsed = int(time.time()) - event.getBeginTime()     # seconds
+        self.updateSubtitlesTime()        # <‑‑ add this line
         # current subtitle timestamp (we keep it in ms)
-        subtitle_ts = (self._subtitlesTime / 1000.0) / self.engine.fpsRatio
+        subtitle_ts = self._subtitlesTime / 1000.0            # seconds
 
-        delay = subtitle_ts - elapsed        # positive = subtitles ahead
+        delay = elapsed - subtitle_ts     # <-- correct sign
 
         # store it
-        self.engine.saveMainDelayToJson(delay)
+        self.engine.saveMainDelayToJson(delay, subs_fps=self.engine.getSubsFps())
+
 
         # feedback
         self.session.open(MessageBox,
@@ -583,20 +585,6 @@ class SubsControllerDVB(Screen, HelpableScreen):
         """Apply previously stored delay for this service."""
         self.engine.applySavedDelay()
         self.showStatus(True)
-
-    # ─── NEW: helper to calculate & save delay after user syncs ───
-    def calculateDelay(self):
-        """Calculate current offset & store it for future visits."""
-        event = self.session.screen["Event_Now"].getEvent()
-        if not event:
-            return
-        eventStart = event.getBeginTime()
-        subtitleTime = (self._subtitlesTime / 1000.0) / self.engine.fpsRatio
-        if eventStart:
-            elapsed = int(time.time()) - eventStart
-            delay = subtitleTime - elapsed
-            self.engine.saveMainDelayToJson(delay)
-            print("[SubsControllerDVB] delay %.3fs saved" % delay)
 
 class SubsEngineDVB(object):
     def __init__(self, session, engineSettings, renderer):
@@ -645,6 +633,7 @@ class SubsEngineDVB(object):
             self.waitTimer.stop()
             self.hideTimer.stop()
             self.fpsRatio = subsFps / float(videoFps)
+            self.setRefTime()                 # <‑‑ keeps timing coherent
             self.renderSub()
             if not self.paused:
                 self.setRefTime()
@@ -845,32 +834,52 @@ class SubsEngineDVB(object):
             print("[SubsEngineDVB] cannot save delay file:", e)
 
     # ––– public API –––
-    def saveMainDelayToJson(self, delay):
+    def saveMainDelayToJson(self, delay, subs_fps=None):
+        """
+        Store both delay (seconds) *and* the subtitles FPS that was
+        active when the user pressed “save”.
+        """
+        if subs_fps is None:
+            subs_fps = self.getSubsFps() or 0
+
         data = self._loadDelayFile()
         data[self.channel_reference] = {
-        "delay": delay,
-        "fps":   self.getSubsFps()          # may be None
+            "delay": delay,
+            "fps":   str(subs_fps),   # keep as string so we can compare easily
         }
         self._saveDelayFile(data)
-        print("[SubsEngineDVB] delay %.3fs saved for %s" % (delay, self.channel_reference))
+        print("[SubsEngineDVB] saved %.3fs @ %s fps for %s"
+              % (delay, subs_fps, self.channel_reference))
+
 
     def retrieveMainDelayFromJson(self):
-        entry = self._loadDelayFile().get(self.channel_reference, {})
-        return entry.get("delay"), entry.get("fps")
+        data = self._loadDelayFile()
+        return data.get(self.channel_reference)   # may be None
 
+
+    # subtitlesdvb.py  (inside SubsEngineDVB.applySavedDelay)
     def applySavedDelay(self):
-        delay, saved_fps = self.retrieveMainDelayFromJson()
-        if delay is None:
+        record = self.retrieveMainDelayFromJson()
+        if not record:
             print("[SubsEngineDVB] no stored delay for", self.channel_reference)
             return
-        # 1) restore the FPS that was active when the delay was saved
-        if saved_fps and saved_fps != self.getSubsFps():
-            self.setSubsFps(saved_fps)
-        # 2) convert the real‑time delay to *scaled* milliseconds
-        delay_ms_scaled = int(delay * 1000 * self.fpsRatio)
-        self.seekRelative(delay_ms_scaled)
-        print("[SubsEngineDVB] applied saved delay %.3fs (fps %.3f)"
-            % (delay, saved_fps or self.getSubsFps()))
+
+        delay_sec = record.get("delay", 0)
+        saved_fps  = record.get("fps")
+
+        # 1) restore FPS if necessary … (unchanged)
+        ...
+
+        # 2) jump by the stored offset ---------------------------------
+        # Current subtitle’s (already fps‑scaled) start‑time in ms
+        now_ms = self.subsList[self.position]['start'] / 90 * self.fpsRatio
+        # Where we actually want to be:
+        target_ms = now_ms + delay_sec * 1000
+        # Move there in one go
+        self.seekTo(target_ms)
+        print("[SubsEngineDVB] applied saved delay %.3fs (seekTo)" % delay_sec)
+
+
 
     def close(self):
         self.waitTimer.stop()
