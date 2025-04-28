@@ -85,29 +85,47 @@ def extract_language(filename):
 def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, rar, lang1, lang2, lang3, stack):
     global settings_provider  # Ensure we're using the existing instance
     DOWNLOAD_PATH = settings_provider.getSetting("LocalSearchPath")
-    print(DOWNLOAD_PATH)
+    print(f"[LocalDriveSeeker][info] search - title: {title}, filepath: {file_path}, langs: {[lang1, lang2, lang3]}, season: {season}, episode: {episode}, tvshow: {tvshow}, year: {year}")
+
     search_paths = [DOWNLOAD_PATH, "/tmp/"]
     subtitles_list = []
     msg = ""
 
-    title_key = get_first_word(title)
-    filename_pattern = rf"{title_key}.*\.srt$"
+    # Normalize title to lowercase for case-insensitive matching
+    title_key = title.lower().replace(":", "").replace(".", "").replace("'", "").strip()  # Remove colons and periods
+    print(title_key)
+
+    # Updated regex pattern to match everything before the first 4-digit year
+    filename_pattern = rf"^(.*?)(?=\.\d{{4}}).*\.srt$"  # Capture everything before the first 4 digits (year) and ignore anything after
+
+    print(f"[LocalDriveSeeker][info] using langs {lang1} {lang2} {lang3}")
 
     for path in search_paths:
         if os.path.exists(path):
             for root, _, files in os.walk(path):  # Recursively walk through directories
                 for file in files:
-                    if re.match(filename_pattern, file, re.IGNORECASE):
-                        language_name = extract_language(file)
-                        subtitles_list.append({
-                            "filename": file,
-                            "path": os.path.join(root, file),
-                            "language_name": language_name,
-                            "language_flag": LANGUAGE_MAP.get(language_name, ("Unknown", "flags/unknown.gif"))[1],
-                            "sync": True
-                        })
+                    # Print the files for further debugging
+                    #print(f"[LocalDriveSeeker][debug] Checking file: {file}")
 
+                    # Match filenames with the regex
+                    if re.match(filename_pattern, file, re.IGNORECASE):
+                        # Ensure the title is found within the filename (case insensitive)
+                        if title_key in file.lower().replace('.', ' '):  # Allow flexibility with periods in the title
+                            print(f"[LocalDriveSeeker][debug] Found matching title: {file}")
+                            language_name = extract_language(file)
+                            subtitles_list.append({
+                                "filename": file,
+                                "path": os.path.join(root, file),
+                                "language_name": language_name,
+                                "language_flag": LANGUAGE_MAP.get(language_name, ("Unknown", "flags/unknown.gif"))[1],
+                                "sync": True
+                            })
+
+    print(f"[LocalDriveSeeker][info] search finished, found {len(subtitles_list)} subtitles in 0.00s")
     return subtitles_list, "", msg
+
+
+
 
 def remove_language_code(filename):
     """Removes repeated or single language codes before '.srt'."""

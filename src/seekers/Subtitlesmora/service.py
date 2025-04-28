@@ -43,6 +43,7 @@ def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, 
     msg = ""
     
     title = re.sub(r'[:,"&!?-]', '', title).replace("  ", " ").title()
+    print(title)
     if tvshow:
         search_string = f"{tvshow} S{int(season):02d}E{int(episode):02d}" if title != tvshow else f"{tvshow} ({int(season):02d}{int(episode):02d})"
     else:
@@ -56,6 +57,7 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
     subtitle_info = subtitles_list[pos]
     language = subtitle_info["language_name"]
     subtitle_id = subtitle_info["id"]    
+    print(subtitle_id)
     download_link = f"{MAIN_URL}/download/mora25r/{subtitle_id}"
     print(download_link)
     log(__name__, f"{DEBUG_PRETEXT} Downloading from: {download_link}")
