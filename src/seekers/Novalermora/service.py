@@ -45,6 +45,7 @@ def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, 
     msg = ""
     
     title = re.sub(r'[:,"&!?-]', '', title).replace("  ", " ").title()
+    title = re.sub(r"'", '', title)
     print(title)
     if tvshow:
         search_string = f"{tvshow} S{int(season):02d}E{int(episode):02d}" if title != tvshow else f"{tvshow} ({int(season):02d}{int(episode):02d})"
