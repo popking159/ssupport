@@ -41,10 +41,36 @@ def get_rating(downloads):
 def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, rar, lang1, lang2, lang3, stack):
     subtitles_list = []
     msg = ""
+
+    # Check if title is blank or empty
+    if not title or title.strip() == "":
+        log(__name__, f"{DEBUG_PRETEXT} Title is blank, skipping search")
+        return subtitles_list, "", msg
+
+    title = re.sub(r' ▎', '▎', title)
+
+    # Define bad strings to remove
+    bad_strings = [
+                "ae|", "al|", "ar|", "at|", "ba|", "be|", "bg|", "br|", "cg|", "ch|", "cz|", "da|", "de|", "dk|",
+                "ee|", "en|", "es|", "eu|", "ex-yu|", "fi|", "fr|", "gr|", "hr|", "hu|", "in|", "ir|", "it|", "lt|",
+                "mk|", "mx|", "nl|", "no|", "pl|", "pt|", "ro|", "rs|", "ru|", "se|", "si|", "sk|", "sp|", "tr|",
+                "uk|", "us|", "yu|","ae▎", "al▎", "ar▎", "at▎", "ba▎", "be▎", "bg▎", "br▎", "cg▎", "ch▎", "cz▎", "da▎", "de▎", "dk▎",
+                "ee▎", "en▎", "es▎", "eu▎", "ex-yu▎", "fi▎", "fr▎", "gr▎", "hr▎", "hu▎", "in▎", "ir▎", "it▎", "lt▎",
+                "mk▎", "mx▎", "nl▎", "no▎", "pl▎", "pt▎", "ro▎", "rs▎", "ru▎", "se▎", "si▎", "sk▎", "sp▎", "tr▎",
+                "uk▎", "us▎", "yu▎"
+                "1080p", "4k", "720p", "hdrip", "hindi", "imdb", "vod", "x264"
+            ]
     
-    title = re.sub(r'[:,"&!?-]', '', title).replace("  ", " ").title()
+    # Remove bad strings from title
+    for bad in bad_strings:
+        title = title.replace(bad, "")
+    
+    # Clean up remaining special characters and spaces
+    title = re.sub(r'[:,"&!?\-]', '', title).replace("  ", " ").strip()#.title()
     title = re.sub(r"'", '', title)
-    print(title)
+    
+    print(f"Cleaned title: {title}")  # Debug print
+    
     if tvshow:
         search_string = f"{tvshow} S{int(season):02d}E{int(episode):02d}" if title != tvshow else f"{tvshow} ({int(season):02d}{int(episode):02d})"
     else:
