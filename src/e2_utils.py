@@ -528,13 +528,14 @@ class BaseMenuScreen(Screen, ConfigListScreen):
                 "cancel": self.keyCancel,
                 "green": self.keySave,
                 "red": self.keyCancel,
+                #"yellow": self.keyGo,  # New action for yellow button
                 "blue": self.resetDefaults,
             }, -2)
 
         self["key_green"] = Label(_("Save"))
         self["key_red"] = Label(_("Cancel"))
         self["key_blue"] = Label(_("Reset Defaults"))
-        self["key_yellow"] = Label("")
+        #self["key_yellow"] = Label(_("Go"))  # Updated label
         self.title = title
         self.onLayoutFinish.append(self.setWindowTitle)
         self.onLayoutFinish.append(self.buildMenu)
@@ -560,3 +561,4 @@ class BaseMenuScreen(Screen, ConfigListScreen):
         for x in self["config"].list:
             x[1].cancel()
         self.close()
+

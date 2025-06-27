@@ -41,6 +41,7 @@ from Components.ServiceEventTracker import ServiceEventTracker
 from Components.Sources.Boolean import Boolean
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
+from Components.config import ConfigPassword
 from Components.config import ConfigSubsection, ConfigSelection, ConfigYesNo, \
     configfile, getConfigListEntry, config, ConfigText, ConfigDirectory, ConfigOnOff, \
     ConfigNothing, ConfigInteger, NoSave, KEY_DELETE, KEY_BACKSPACE, \
@@ -5276,7 +5277,217 @@ class SubsSearchProviderMenu(BaseMenuScreen):
         title = toString(provider.provider_name) + " " + _("settings")
         BaseMenuScreen.__init__(self, session, title)
         self.provider = provider
+        self.backup_path = "/etc/enigma2/subssupport"
+        self.backup_file = os.path.join(self.backup_path, f"{provider.id}_credentials.json")
+        
+        if not os.path.exists(self.backup_path):
+            os.makedirs(self.backup_path, mode=0o755)
+
+        # Setup action map correctly for Enigma2
+        self["actions"] = ActionMap(["SetupActions", "ColorActions", "MenuActions"],
+        {
+            "cancel": self.keyCancel,
+            "green": self.keySave,
+            "red": self.keyCancel,
+            "yellow": self.keyTestCredentials if self._has_credentials() else None,
+            "blue": self.keyResetDefaults,
+            "menu": self.keyBackup,
+            "info": self.keyRestore
+        }, -2)
+
+        # Set button labels and visibility
+        self["key_red"] = Label(_("Cancel"))
+        self["key_green"] = Label(_("Save"))
+        self["key_blue"] = Label(_("Reset"))
+        
+        if self._has_credentials():
+            self["key_yellow"] = Label(_("Test"))
+            self["key_yellow"].show()
+        else:
+            self["key_yellow"].hide()
+
+    def _has_credentials(self):
+        """Check if provider has credential settings"""
+        settings = self.provider.settings_provider.getSettingsDict()
+        credential_keys = {'username', 'password', 'api_key', 'token'}
+        return any(key.lower() in str(k).lower() for k in settings for key in credential_keys)
 
     def buildMenu(self):
         settingsProvider = self.provider.settings_provider
         self["config"].setList(settingsProvider.getE2Settings())
+
+    def keyTestCredentials(self):
+        """Yellow button - Test credentials"""
+        if hasattr(self.provider, 'test_credentials'):
+            self.session.openWithCallback(
+                self._testCredentials,
+                MessageBox,
+                _("Testing credentials..."),
+                MessageBox.TYPE_INFO,
+                timeout=3
+            )
+
+    def _testCredentials(self, *args):
+        """Handle credential test result"""
+        deferred = self.provider.test_credentials()
+        deferred.addCallbacks(self._onTestSuccess, self._onTestError)
+
+    def _onTestSuccess(self, result):
+        """Show successful login details"""
+        user = result.get('user', {})
+        message = (
+            _("Login successful!") + "\n\n" +
+            _("User: %s") % user.get('user_id', '') + "\n" +
+            _("Level: %s") % user.get('level', '') + "\n" +
+            _("Downloads left: %s") % user.get('allowed_downloads', '')
+        )
+        self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
+
+    def _onTestError(self, failure):
+        """Show login failure"""
+        self.session.open(
+            MessageBox,
+            _("Login failed:") + f" {str(failure.value)}",
+            MessageBox.TYPE_ERROR
+        )
+
+    def keyResetDefaults(self):
+        """Blue button - Reset to defaults"""
+        for x in self["config"].list:
+            x[1].value = x[1].default
+        self.session.open(
+            MessageBox,
+            _("Settings reset to defaults"),
+            MessageBox.TYPE_INFO,
+            timeout=3
+        )
+
+    def keyBackup(self):
+        """MENU button - Backup credentials"""
+        try:
+            creds = {
+                k: v for k, v in self.provider.settings_provider.getSettingsDict().items()
+                if any(x in k.lower() for x in ['user', 'pass', 'api', 'key', 'token'])
+            }
+            
+            with open(self.backup_file, 'w') as f:
+                json.dump(creds, f, indent=4)
+            os.chmod(self.backup_file, 0o600)
+            
+            self.session.open(
+                MessageBox,
+                _("Credentials backed up to:") + f"\n{self.backup_file}",
+                MessageBox.TYPE_INFO,
+                timeout=5
+            )
+        except Exception as e:
+            self.session.open(
+                MessageBox,
+                _("Backup failed:") + f" {str(e)}",
+                MessageBox.TYPE_ERROR,
+                timeout=5
+            )
+
+
+
+    def keyRestore(self):
+        """Universal restore that works for ALL providers"""
+        if not os.path.exists(self.backup_file):
+            self.session.open(
+                MessageBox,
+                _("No backup file found"),
+                MessageBox.TYPE_ERROR,
+                timeout=5
+            )
+            return
+
+        try:
+            # Load backup data
+            with open(self.backup_file, 'r') as f:
+                backup_data = json.load(f)
+            
+            # Get ALL config entries regardless of names
+            config_entries = self.provider.settings_provider.getE2Settings()
+            
+            # Restore using SMART matching
+            restored = []
+            for config_entry in config_entries:
+                entry_name = str(config_entry[0])
+                entry_obj = config_entry[1]
+                
+                # Find matching backup key using flexible matching
+                for backup_key, backup_value in backup_data.items():
+                    # Case 1: Exact match (OpenSubtitles)
+                    if backup_key.lower() == entry_name.lower():
+                        entry_obj.value = backup_value
+                        restored.append((entry_name, backup_value))
+                        break
+                    
+                    # Case 2: Partial match (Subdl_API_KEY -> API_KEY)
+                    if (entry_name.lower() in backup_key.lower() or 
+                        backup_key.lower() in entry_name.lower()):
+                        entry_obj.value = backup_value
+                        restored.append((entry_name, backup_value))
+                        break
+            
+            if not restored:
+                # Final attempt: Match by value type
+                for config_entry in config_entries:
+                    entry_name = str(config_entry[0])
+                    entry_obj = config_entry[1]
+                    
+                    if isinstance(entry_obj, ConfigPassword) and any('pass' in k.lower() for k in backup_data):
+                        key = next(k for k in backup_data if 'pass' in k.lower())
+                        entry_obj.value = backup_data[key]
+                        restored.append((entry_name, "******"))
+                    elif isinstance(entry_obj, ConfigText) and any('api' in k.lower() or 'key' in k.lower() for k in backup_data):
+                        key = next(k for k in backup_data if 'api' in k.lower() or 'key' in k.lower())
+                        entry_obj.value = backup_data[key]
+                        restored.append((entry_name, "******" if 'key' in key.lower() else backup_data[key]))
+            
+            if not restored:
+                self.session.open(
+                    MessageBox,
+                    _("No compatible settings found in backup"),
+                    MessageBox.TYPE_ERROR,
+                    timeout=5
+                )
+                return
+
+            # Save and refresh
+            configfile.save()
+            self.buildMenu()
+
+            # Show detailed success message
+            msg = _("Successfully restored:") + "\n"
+            for name, value in restored:
+                msg += f"{name}: {value}\n"
+
+            self.session.open(
+                MessageBox,
+                msg,
+                MessageBox.TYPE_INFO,
+                timeout=10
+            )
+
+        except Exception as e:
+            self.session.open(
+                MessageBox,
+                _("Restore error:") + f" {str(e)}",
+                MessageBox.TYPE_ERROR,
+                timeout=5
+            )
+
+
+    def keySave(self):
+        """Green button - Save settings"""
+        for x in self["config"].list:
+            x[1].save()
+        configfile.save()
+        self.close(True)
+
+    def keyCancel(self):
+        """Red button - Cancel"""
+        for x in self["config"].list:
+            x[1].cancel()
+        self.close()
