@@ -29,7 +29,7 @@ import re
 try:
     from .seekers import SubtitlesDownloadError, SubtitlesSearchError, \
         SubtitlesErrors, SubtitlesmoraSeeker, NovalermoraSeeker, ElsubtitleSeeker, SubtitlecatSeeker, OpenSubtitles2Seeker, TitulkyComSeeker, \
-        OpenSubtitlesSeeker, OpenSubtitlesMoraSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
+        OpenSubtitlesMoraSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
          TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker, FoursubSeeker, YtssubsSeeker
     from .seekers.seeker import BaseSeeker
     from .seekers.utilities import languageTranslate, langToCountry, \
@@ -38,7 +38,7 @@ try:
 except (ValueError, ImportError):
     from seekers import SubtitlesDownloadError, SubtitlesSearchError, \
         SubtitlesErrors, SubtitlesmoraSeeker, NovalermoraSeeker, ElsubtitleSeeker, SubtitlecatSeeker, OpenSubtitles2Seeker, TitulkyComSeeker, \
-        OpenSubtitlesMoraSeeker, OpenSubtitlesSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
+        OpenSubtitlesMoraSeeker, PodnapisiSeeker, SubscenebestSeeker, LocalDriveSeeker, IndexsubtitleSeeker, SubsytsSeeker, MoviesubtitlesSeeker, Sub_Scene_comSeeker, SubdlSeeker, \
          TitloviSeeker, PrijevodiOnlineSeeker, MySubsSeeker, SubsourceSeeker, FoursubSeeker, YtssubsSeeker
     from seekers.seeker import BaseSeeker
     from seekers.utilities import languageTranslate, langToCountry, \
@@ -64,7 +64,6 @@ SUBTITLES_SEEKERS.append(SubtitlecatSeeker)
 SUBTITLES_SEEKERS.append(ElsubtitleSeeker)
 SUBTITLES_SEEKERS.append(Sub_Scene_comSeeker)
 SUBTITLES_SEEKERS.append(SubscenebestSeeker)
-SUBTITLES_SEEKERS.append(OpenSubtitlesSeeker)
 SUBTITLES_SEEKERS.append(OpenSubtitlesMoraSeeker)
 SUBTITLES_SEEKERS.append(MySubsSeeker)
 SUBTITLES_SEEKERS.append(TitulkyComSeeker)

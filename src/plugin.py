@@ -6,13 +6,19 @@ from Components.PluginComponent import PluginDescriptor
 from Components.config import config
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
+from twisted.web.client import getPage
+from Screens.Console import Console
+import six
+import logging
 
 from .e2_utils import isFullHD
 from .subtitles import E2SubsSeeker, SubsSearch, initSubsSettings, \
     SubsSetupGeneral, SubsSearchSettings, SubsSetupExternal, SubsSetupEmbedded
 from .subtitlesdvb import SubsSupportDVB, SubsSetupDVBPlayer
 
-VER = "1.7.0.21"
+VER = "1.7.0.22"
+log = logging.getLogger("SubsSupport")
+
 def openSubtitlesSearch(session, **kwargs):
     settings = initSubsSettings().search
     eventList = []
@@ -77,6 +83,8 @@ class SubsSupportSettings(Screen):
         self.externalSettings = externalSettings
         self.embeddedSettings = embeddedSettings
         self.dvbSettings = dvbSettings
+        self.new_version = None
+        self.new_description = None
         self["menuList"] = List([
             (_("General settings"), "general"),
             (_("External subtitles settings"), "external"),
@@ -91,6 +99,7 @@ class SubsSupportSettings(Screen):
             "cancel": self.close,
         })
         self.onLayoutFinish.append(self.setWindowTitle)
+        self.onFirstExecBegin.append(self.checkUpdates)
 
     def setWindowTitle(self):
         self.setup_title = _("SubsSupport settings")
@@ -129,6 +138,46 @@ class SubsSupportSettings(Screen):
 
     def openDVBPlayerSettings(self):
         self.session.open(SubsSetupDVBPlayer, self.dvbSettings)
+
+    def checkUpdates(self):
+        try:
+            url = b"https://raw.githubusercontent.com/popking159/ssupport/main/version.txt"
+            getPage(url, timeout=10).addCallback(self.parseUpdateData).addErrback(self.updateError)
+        except Exception as e:
+            log.error("Update check error: %s", str(e))
+
+    def updateError(self, error):
+        log.error("Failed to check for updates: %s", str(error))
+
+    def parseUpdateData(self, data):
+        if six.PY3:
+            data = data.decode("utf-8")
+        else:
+            data = data.encode("utf-8")
+        
+        if data:
+            lines = data.split("\n")
+            for line in lines:
+                if line.startswith("version="):
+                    self.new_version = line.split("'")[1] if "'" in line else line.split('"')[1]
+                if line.startswith("description="):
+                    self.new_description = line.split("'")[1] if "'" in line else line.split('"')[1]
+                    break
+        
+        if self.new_version and self.new_version != VER:
+            message = _("New version %s is available.\n\n%s\n\nDo you want to install now?") % (self.new_version, self.new_description)
+            self.session.openWithCallback(
+                self.installUpdate, 
+                MessageBox, 
+                message, 
+                MessageBox.TYPE_YESNO,
+                timeout=10
+            )
+
+    def installUpdate(self, answer=False):
+        if answer:
+            cmd = 'wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/subssupport-install.sh -O - | /bin/sh'
+            self.session.open(Console, title=_("Installing update..."), cmdlist=[cmd], closeOnSuccess=False)
 
 
 def Plugins(**kwargs):
