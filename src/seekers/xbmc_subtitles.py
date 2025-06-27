@@ -5,6 +5,7 @@ Created on Feb 10, 2014
 '''
 from __future__ import absolute_import
 import os
+import json
 import time
 import six
 from .seeker import BaseSeeker
@@ -273,9 +274,216 @@ class OpenSubtitles2Seeker(XBMCSubtitlesAdapter):
     supported_langs = allLang()
     default_settings = {
         'OpenSubtitles_username': {'label': "USERNAME", 'type': 'text', 'default': "", 'pos': 0},
-        'OpenSubtitles_password': {'label': "PASSWORD", 'type': 'text', 'default': "", 'pos': 1},
+        'OpenSubtitles_password': {'label': "PASSWORD", 'type': 'password', 'default': "", 'pos': 1},
         'OpenSubtitles_API_KEY': {'label': "API_KEY", 'type': 'text', 'default': '', 'pos': 2}
     }
+
+    def __init__(self, *args, **kwargs):
+        super(OpenSubtitles2Seeker, self).__init__(*args, **kwargs)
+        self.backup_path = "/etc/enigma2/subssupport"
+        self.backup_file = os.path.join(self.backup_path, f"{self.id}_credentials.json")
+        if not os.path.exists(self.backup_path):
+            os.makedirs(self.backup_path, mode=0o755)
+        
+        # Setup notifiers after settings are initialized
+        self._setup_notifiers()
+
+    def _setup_notifiers(self):
+        """Setup notifiers for backup/restore actions"""
+        if hasattr(self.settings_provider, 'OpenSubtitles_backup'):
+            self.settings_provider.OpenSubtitles_backup.addNotifier(
+                self._execute_backup,
+                initial_call=False
+            )
+        
+        if hasattr(self.settings_provider, 'OpenSubtitles_restore'):
+            self.settings_provider.OpenSubtitles_restore.addNotifier(
+                self._execute_restore,
+                initial_call=False
+            )
+
+    def _execute_backup(self, configElement=None):
+        """Handle backup operation"""
+        try:
+            # Only proceed if the value is True (user pressed OK)
+            if not (configElement and configElement.value):
+                return
+
+            creds = {
+                'username': self.settings_provider.OpenSubtitles_username.value,
+                'password': self.settings_provider.OpenSubtitles_password.value,
+                'api_key': self.settings_provider.OpenSubtitles_API_KEY.value
+            }
+            
+            with open(self.backup_file, 'w') as f:
+                json.dump(creds, f, indent=4)
+            os.chmod(self.backup_file, 0o600)
+            
+            # Force message display through session
+            if hasattr(self, 'session'):
+                self.session.open(
+                    MessageBox,
+                    _("Credentials successfully backed up to:") + f"\n{self.backup_file}",
+                    MessageBox.TYPE_INFO,
+                    timeout=5
+                )
+            
+            # Immediately reset the value
+            configElement.value = False
+            configfile.save()
+            
+        except Exception as e:
+            error_msg = _("Backup failed:") + f" {str(e)}"
+            if hasattr(self, 'session'):
+                self.session.open(
+                    MessageBox,
+                    error_msg,
+                    MessageBox.TYPE_ERROR,
+                    timeout=5
+                )
+            configElement.value = False
+            configfile.save()
+
+    def _execute_restore(self, configElement=None):
+        """Handle restore operation"""
+        try:
+            # Only proceed if the value is True (user pressed OK)
+            if not (configElement and configElement.value):
+                return
+
+            if not os.path.exists(self.backup_file):
+                error_msg = _("No backup file found at:") + f"\n{self.backup_file}"
+                if hasattr(self, 'session'):
+                    self.session.open(
+                        MessageBox,
+                        error_msg,
+                        MessageBox.TYPE_ERROR,
+                        timeout=5
+                    )
+                configElement.value = False
+                configfile.save()
+                return
+            
+            with open(self.backup_file, 'r') as f:
+                creds = json.load(f)
+            
+            # Update settings
+            self.settings_provider.OpenSubtitles_username.value = creds.get('username', '')
+            self.settings_provider.OpenSubtitles_password.value = creds.get('password', '')
+            self.settings_provider.OpenSubtitles_API_KEY.value = creds.get('api_key', '')
+            
+            # Force message display through session
+            if hasattr(self, 'session'):
+                self.session.open(
+                    MessageBox,
+                    _("Credentials successfully restored from:") + f"\n{self.backup_file}",
+                    MessageBox.TYPE_INFO,
+                    timeout=5
+                )
+            
+            # Immediately reset the value
+            configElement.value = False
+            configfile.save()
+            
+        except Exception as e:
+            error_msg = _("Restore failed:") + f" {str(e)}"
+            if hasattr(self, 'session'):
+                self.session.open(
+                    MessageBox,
+                    error_msg,
+                    MessageBox.TYPE_ERROR,
+                    timeout=5
+                )
+            configElement.value = False
+            configfile.save()
+
+    def test_credentials(self):
+        """Test OpenSubtitles.com credentials"""
+        from twisted.internet import defer, threads
+        import requests
+        import json
+
+        def _api_login():
+            username = self.settings_provider.getSetting("OpenSubtitles_username")
+            password = self.settings_provider.getSetting("OpenSubtitles_password")
+            api_key = self.settings_provider.getSetting("OpenSubtitles_API_KEY")
+
+            if not username or not password:
+                raise Exception(_("Username and password are required"))
+
+            url = "https://api.opensubtitles.com/api/v1/login"
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Api-Key": api_key,
+                "User-Agent": "SubsSupport/1.0"
+            }
+            payload = {
+                "username": username,
+                "password": password
+            }
+
+            try:
+                response = requests.post(url, json=payload, headers=headers)
+                response.raise_for_status()
+                return response.json()
+            except Exception as e:
+                raise Exception(_("API error: %s") % str(e))
+
+        deferred = defer.Deferred()
+        d = threads.deferToThread(_api_login)
+        d.addCallback(deferred.callback)
+        d.addErrback(deferred.errback)
+        return deferred
+
+    def _show_auth_result(self, result):
+        """Display authentication result with download limits"""
+        user = result.get('user', {})
+        message = (
+            _("Authentication successful!") + "\n\n" +
+            _("User level: %s") % user.get('level', 'Unknown') + "\n" +
+            _("Allowed downloads: %s") % user.get('allowed_downloads', 0) + "\n" +
+            _("Allowed translations: %s") % user.get('allowed_translations', 0)
+        )
+        self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
+
+    def _show_auth_error(self, failure):
+        """Display authentication error"""
+        error_msg = _("Authentication failed") + ": " + str(failure.value)
+        self.session.open(MessageBox, error_msg, MessageBox.TYPE_ERROR)
+
+    # def keyGo(self):
+        # """Called when 'Go' button is pressed in settings"""
+        # from twisted.internet import reactor
+
+        # # Show testing message
+        # testing_msg = self.session.open(
+            # MessageBox,
+            # _("Testing OpenSubtitles.com credentials..."),
+            # MessageBox.TYPE_INFO,
+            # timeout=3
+        # )
+
+        # # Start authentication test
+        # deferred = self.test_credentials()
+        # deferred.addCallback(self._show_auth_result)
+        # deferred.addErrback(self._show_auth_error)
+
+    def _search(self, title, filepath, langs, season, episode, tvshow, year):
+        """Override search to include credential check"""
+        username = self.settings_provider.getSetting("OpenSubtitles_username")
+        password = self.settings_provider.getSetting("OpenSubtitles_password")
+        
+        if not username or not password:
+            return {
+                'list': [],
+                'session_id': "",
+                'msg': _("OpenSubtitles.com requires username and password")
+            }
+            
+        return super(OpenSubtitles2Seeker, self)._search(
+            title, filepath, langs, season, episode, tvshow, year
+        )
 
 try:
     from .Podnapisi import podnapisi
