@@ -214,36 +214,6 @@ class FoursubSeeker(XBMCSubtitlesAdapter):
     default_settings = {}
 
 try:
-    from .OpenSubtitles import opensubtitles
-except ImportError as e:
-    opensubtitles = e
-
-
-class OpenSubtitlesSeeker(XBMCSubtitlesAdapter):
-    module = opensubtitles
-    if isinstance(module, Exception):
-        error, module = module, None
-    id = 'opensubtitles'
-    provider_name = 'OpenSubtitles.org'
-    supported_langs = allLang()
-    default_settings = {}
-
-    def _search(self, title, filepath, lang, season, episode, tvshow, year):
-        from six.moves import xmlrpc_client
-        tries = 4
-        for i in range(tries):
-            try:
-                return XBMCSubtitlesAdapter._search(self, title, filepath, lang, season, episode, tvshow, year)
-            except xmlrpc_client.Client.ProtocolError as e:
-                self.log.error(e.errcode)
-                if i == (tries - 1):
-                    raise
-                if e.errcode == 503:
-                    time.sleep(0.5)
-
-
-
-try:
     from .OpenSubtitlesMora import opensubtitlesmora
 except ImportError as e:
     opensubtitlesmora = e
@@ -451,23 +421,6 @@ class OpenSubtitles2Seeker(XBMCSubtitlesAdapter):
         """Display authentication error"""
         error_msg = _("Authentication failed") + ": " + str(failure.value)
         self.session.open(MessageBox, error_msg, MessageBox.TYPE_ERROR)
-
-    # def keyGo(self):
-        # """Called when 'Go' button is pressed in settings"""
-        # from twisted.internet import reactor
-
-        # # Show testing message
-        # testing_msg = self.session.open(
-            # MessageBox,
-            # _("Testing OpenSubtitles.com credentials..."),
-            # MessageBox.TYPE_INFO,
-            # timeout=3
-        # )
-
-        # # Start authentication test
-        # deferred = self.test_credentials()
-        # deferred.addCallback(self._show_auth_result)
-        # deferred.addErrback(self._show_auth_error)
 
     def _search(self, title, filepath, langs, season, episode, tvshow, year):
         """Override search to include credential check"""
