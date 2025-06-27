@@ -12,7 +12,11 @@ class SubRipParser(BaseParser):
         return self._srt_to_dict(text)
 
     def _removeTags(self, text):
-        return re.sub('<[^>]*>', '', text)
+        # Remove HTML tags
+        text = re.sub('<[^>]*>', '', text)
+        # Remove SSA/ASS positioning tags like {\an8}
+        text = re.sub(r'\{.*?\}', '', text)
+        return text
 
     def _getColor(self, text, color):
         newColor = color
