@@ -1,2 +1,2 @@
-version='1.7.0.22'
+version='1.7.0.23'
 description='1-add check update function \n2-add test your opensubtitles.com credentials  \n3-add backup and restore function \n4-remove SSA/ASS positioning tags like {\an8} \n5-remove opensubtitles.org to not confuse users'
