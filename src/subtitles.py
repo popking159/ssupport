@@ -5282,7 +5282,13 @@ class SubsSearchProviderMenu(BaseMenuScreen):
         
         if not os.path.exists(self.backup_path):
             os.makedirs(self.backup_path, mode=0o755)
-
+        
+        # Initialize all key labels first
+        self["key_red"] = Label(_("Cancel"))
+        self["key_green"] = Label(_("Save"))
+        self["key_blue"] = Label(_("Reset"))
+        self["key_yellow"] = Label("")  # Initialize empty, we'll set it later
+        
         # Setup action map correctly for Enigma2
         self["actions"] = ActionMap(["SetupActions", "ColorActions", "MenuActions"],
         {
