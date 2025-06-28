@@ -1,7 +1,7 @@
 #!/bin/sh
 ##setup command=wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/subssupport-install.sh -O - | /bin/sh
 ######### Only These two lines to edit with new version ######
-#version='1.7.0.22'
+#version='1.7.0.23'
 #description='add Indexsubtitle and Moviesubtitles providers \n add another provider for yify subtitles "Subsyts" \n more adjustment for fixed background'
 ##############################################################
 echo ''
@@ -10,7 +10,7 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7 r22                   **"
+echo "**                 SubsSupport v1.7 r23                   **"
 echo "************************************************************"
 echo "************************************************************"
 sleep 3s
