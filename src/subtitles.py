@@ -5283,35 +5283,33 @@ class SubsSearchProviderMenu(BaseMenuScreen):
         if not os.path.exists(self.backup_path):
             os.makedirs(self.backup_path, mode=0o755)
         
-        # Initialize all key labels first
+        # Initialize all key labels
         self["key_red"] = Label(_("Cancel"))
         self["key_green"] = Label(_("Save"))
         self["key_blue"] = Label(_("Reset"))
-        self["key_yellow"] = Label("")  # Initialize empty, we'll set it later
-        
-        # Setup action map correctly for Enigma2
-        self["actions"] = ActionMap(["SetupActions", "ColorActions", "MenuActions"],
-        {
+        self["key_yellow"] = Label("")
+
+        # Create base action map without yellow action
+        action_map = {
             "cancel": self.keyCancel,
             "green": self.keySave,
             "red": self.keyCancel,
-            "yellow": self.keyTestCredentials if self._has_credentials() else None,
             "blue": self.keyResetDefaults,
             "menu": self.keyBackup,
             "info": self.keyRestore
-        }, -2)
+        }
 
-        # Set button labels and visibility
-        self["key_red"] = Label(_("Cancel"))
-        self["key_green"] = Label(_("Save"))
-        self["key_blue"] = Label(_("Reset"))
-        
+        # Add yellow action only if credentials exist
         if self._has_credentials():
             self["key_yellow"] = Label(_("Test"))
             self["key_yellow"].show()
+            action_map["yellow"] = self.keyTestCredentials
         else:
             self["key_yellow"].hide()
 
+        # Create the ActionMap with the complete action set
+        self["actions"] = ActionMap(["SetupActions", "ColorActions", "MenuActions"], action_map, -2)
+    
     def _has_credentials(self):
         """Check if provider has credential settings"""
         settings = self.provider.settings_provider.getSettingsDict()
@@ -5373,7 +5371,7 @@ class SubsSearchProviderMenu(BaseMenuScreen):
         try:
             creds = {
                 k: v for k, v in self.provider.settings_provider.getSettingsDict().items()
-                if any(x in k.lower() for x in ['user', 'pass', 'api', 'key', 'token'])
+                if any(x in k.lower() for x in ['user', 'pass', 'api', 'key', 'token' , 'path'])
             }
             
             with open(self.backup_file, 'w') as f:
@@ -5393,8 +5391,6 @@ class SubsSearchProviderMenu(BaseMenuScreen):
                 MessageBox.TYPE_ERROR,
                 timeout=5
             )
-
-
 
     def keyRestore(self):
         """Universal restore that works for ALL providers"""
@@ -5435,6 +5431,13 @@ class SubsSearchProviderMenu(BaseMenuScreen):
                         entry_obj.value = backup_value
                         restored.append((entry_name, backup_value))
                         break
+                    
+                    # Case 3: Match path-related settings
+                    if any(x in backup_key.lower() for x in ['path', 'dir', 'folder', 'location']):
+                        if isinstance(entry_obj, (ConfigDirectory, ConfigText)):
+                            entry_obj.value = backup_value
+                            restored.append((entry_name, backup_value))
+                            break
             
             if not restored:
                 # Final attempt: Match by value type
@@ -5450,6 +5453,11 @@ class SubsSearchProviderMenu(BaseMenuScreen):
                         key = next(k for k in backup_data if 'api' in k.lower() or 'key' in k.lower())
                         entry_obj.value = backup_data[key]
                         restored.append((entry_name, "******" if 'key' in key.lower() else backup_data[key]))
+                    elif isinstance(entry_obj, (ConfigDirectory, ConfigText)) and \
+                         any(x in k.lower() for k in backup_data for x in ['path', 'dir', 'folder']):
+                        key = next(k for k in backup_data if any(x in k.lower() for x in ['path', 'dir', 'folder']))
+                        entry_obj.value = backup_data[key]
+                        restored.append((entry_name, backup_data[key]))
             
             if not restored:
                 self.session.open(
@@ -5483,7 +5491,6 @@ class SubsSearchProviderMenu(BaseMenuScreen):
                 MessageBox.TYPE_ERROR,
                 timeout=5
             )
-
 
     def keySave(self):
         """Green button - Save settings"""
