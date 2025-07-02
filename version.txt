@@ -1,2 +1,2 @@
-version='1.7.0.23'
-description='1-add check update function \n2-add test your opensubtitles.com credentials  \n3-add backup and restore function \n4-remove SSA/ASS positioning tags like {\an8} \n5-remove opensubtitles.org to not confuse users'
+version='1.7.0.24'
+description='1-modify test your opensubtitles.com credentials \n2-add test your subdl credentials  \n3-add backup and restore function for all plugin settings \n4-fix crash of yellow button if no credentials in the provider'
