@@ -248,125 +248,6 @@ class OpenSubtitles2Seeker(XBMCSubtitlesAdapter):
         'OpenSubtitles_API_KEY': {'label': "API_KEY", 'type': 'text', 'default': '', 'pos': 2}
     }
 
-    def __init__(self, *args, **kwargs):
-        super(OpenSubtitles2Seeker, self).__init__(*args, **kwargs)
-        self.backup_path = "/etc/enigma2/subssupport"
-        self.backup_file = os.path.join(self.backup_path, f"{self.id}_credentials.json")
-        if not os.path.exists(self.backup_path):
-            os.makedirs(self.backup_path, mode=0o755)
-        
-        # Setup notifiers after settings are initialized
-        self._setup_notifiers()
-
-    def _setup_notifiers(self):
-        """Setup notifiers for backup/restore actions"""
-        if hasattr(self.settings_provider, 'OpenSubtitles_backup'):
-            self.settings_provider.OpenSubtitles_backup.addNotifier(
-                self._execute_backup,
-                initial_call=False
-            )
-        
-        if hasattr(self.settings_provider, 'OpenSubtitles_restore'):
-            self.settings_provider.OpenSubtitles_restore.addNotifier(
-                self._execute_restore,
-                initial_call=False
-            )
-
-    def _execute_backup(self, configElement=None):
-        """Handle backup operation"""
-        try:
-            # Only proceed if the value is True (user pressed OK)
-            if not (configElement and configElement.value):
-                return
-
-            creds = {
-                'username': self.settings_provider.OpenSubtitles_username.value,
-                'password': self.settings_provider.OpenSubtitles_password.value,
-                'api_key': self.settings_provider.OpenSubtitles_API_KEY.value
-            }
-            
-            with open(self.backup_file, 'w') as f:
-                json.dump(creds, f, indent=4)
-            os.chmod(self.backup_file, 0o600)
-            
-            # Force message display through session
-            if hasattr(self, 'session'):
-                self.session.open(
-                    MessageBox,
-                    _("Credentials successfully backed up to:") + f"\n{self.backup_file}",
-                    MessageBox.TYPE_INFO,
-                    timeout=5
-                )
-            
-            # Immediately reset the value
-            configElement.value = False
-            configfile.save()
-            
-        except Exception as e:
-            error_msg = _("Backup failed:") + f" {str(e)}"
-            if hasattr(self, 'session'):
-                self.session.open(
-                    MessageBox,
-                    error_msg,
-                    MessageBox.TYPE_ERROR,
-                    timeout=5
-                )
-            configElement.value = False
-            configfile.save()
-
-    def _execute_restore(self, configElement=None):
-        """Handle restore operation"""
-        try:
-            # Only proceed if the value is True (user pressed OK)
-            if not (configElement and configElement.value):
-                return
-
-            if not os.path.exists(self.backup_file):
-                error_msg = _("No backup file found at:") + f"\n{self.backup_file}"
-                if hasattr(self, 'session'):
-                    self.session.open(
-                        MessageBox,
-                        error_msg,
-                        MessageBox.TYPE_ERROR,
-                        timeout=5
-                    )
-                configElement.value = False
-                configfile.save()
-                return
-            
-            with open(self.backup_file, 'r') as f:
-                creds = json.load(f)
-            
-            # Update settings
-            self.settings_provider.OpenSubtitles_username.value = creds.get('username', '')
-            self.settings_provider.OpenSubtitles_password.value = creds.get('password', '')
-            self.settings_provider.OpenSubtitles_API_KEY.value = creds.get('api_key', '')
-            
-            # Force message display through session
-            if hasattr(self, 'session'):
-                self.session.open(
-                    MessageBox,
-                    _("Credentials successfully restored from:") + f"\n{self.backup_file}",
-                    MessageBox.TYPE_INFO,
-                    timeout=5
-                )
-            
-            # Immediately reset the value
-            configElement.value = False
-            configfile.save()
-            
-        except Exception as e:
-            error_msg = _("Restore failed:") + f" {str(e)}"
-            if hasattr(self, 'session'):
-                self.session.open(
-                    MessageBox,
-                    error_msg,
-                    MessageBox.TYPE_ERROR,
-                    timeout=5
-                )
-            configElement.value = False
-            configfile.save()
-
     def test_credentials(self):
         """Test OpenSubtitles.com credentials"""
         from twisted.internet import defer, threads
@@ -383,7 +264,6 @@ class OpenSubtitles2Seeker(XBMCSubtitlesAdapter):
 
             url = "https://api.opensubtitles.com/api/v1/login"
             headers = {
-                "Content-Type": "application/json",
                 "Accept": "application/json",
                 "Api-Key": api_key,
                 "User-Agent": "SubsSupport/1.0"
@@ -406,21 +286,18 @@ class OpenSubtitles2Seeker(XBMCSubtitlesAdapter):
         d.addErrback(deferred.errback)
         return deferred
 
-    def _show_auth_result(self, result):
-        """Display authentication result with download limits"""
-        user = result.get('user', {})
-        message = (
-            _("Authentication successful!") + "\n\n" +
-            _("User level: %s") % user.get('level', 'Unknown') + "\n" +
-            _("Allowed downloads: %s") % user.get('allowed_downloads', 0) + "\n" +
-            _("Allowed translations: %s") % user.get('allowed_translations', 0)
-        )
-        self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
-
-    def _show_auth_error(self, failure):
-        """Display authentication error"""
-        error_msg = _("Authentication failed") + ": " + str(failure.value)
-        self.session.open(MessageBox, error_msg, MessageBox.TYPE_ERROR)
+    def show_message(self, session, message, is_error=False):
+        """Universal message display method"""
+        from Screens.MessageBox import MessageBox
+        try:
+            session.open(
+                MessageBox,
+                message,
+                MessageBox.TYPE_ERROR if is_error else MessageBox.TYPE_INFO,
+                timeout=10
+            )
+        except Exception as e:
+            print("Failed to show message:", str(e))
 
     def _search(self, title, filepath, langs, season, episode, tvshow, year):
         """Override search to include credential check"""
@@ -469,20 +346,81 @@ class SubdlSeeker(XBMCSubtitlesAdapter):
 
     id = 'subdl.com'
     provider_name = 'Subdl'
-    
     supported_langs = [
-        "en", "fr", "hu", "cs", "pl", "sk", "pt", "pt-br", "es", "el", "ar", "sq", "hy", "ay", "bs", "bg",
-        "ca", "zh", "hr", "da", "nl", "eo", "et", "fi", "gl", "ka", "de", "he", "hi", "is", "id", "it", "ja",
-        "kk", "ko", "lv", "lt", "lb", "mk", "ms", "no", "oc", "fa", "ro", "ru", "sr", "sl", "sv", "th", "tr",
-        "uk", "vi"
+        "en", "fr", "hu", "cs", "pl", "sk", "pt", "pt-br", "es", "el", "ar", "sq", 
+        "hy", "ay", "bs", "bg", "ca", "zh", "hr", "da", "nl", "eo", "et", "fi", 
+        "gl", "ka", "de", "he", "hi", "is", "id", "it", "ja", "kk", "ko", "lv", 
+        "lt", "lb", "mk", "ms", "no", "oc", "fa", "ro", "ru", "sr", "sl", "sv", 
+        "th", "tr", "uk", "vi"
     ]
-
     default_settings = {
         'Subdl_API_KEY': {'label': "API_KEY", 'type': 'text', 'default': '', 'pos': 2}
     }
 
-    movie_search = True
-    tvshow_search = True
+    def test_credentials(self):
+        """Test Subdl.com API key"""
+        from twisted.internet import defer, threads
+        import requests
+
+        def _api_test():
+            api_key = self.settings_provider.getSetting("Subdl_API_KEY")
+            
+            if not api_key:
+                raise Exception(_("API key is required"))
+
+            url = "https://api.subdl.com/api/v1/subtitles"
+            params = {
+                "api_key": api_key,
+                "film_name": "Inception",
+                "type": "movie",
+                "languages": "EN"
+            }
+
+            try:
+                response = requests.get(url, params=params)
+                response.raise_for_status()
+                data = response.json()
+                
+                if not data.get('status'):
+                    raise Exception(_("API error: %s") % data.get('message', 'Unknown error'))
+                
+                return _("Subdl API key is valid and working")
+            except Exception as e:
+                raise Exception(_("API error: %s") % str(e))
+
+        deferred = defer.Deferred()
+        d = threads.deferToThread(_api_test)
+        d.addCallback(deferred.callback)
+        d.addErrback(deferred.errback)
+        return deferred
+
+    def show_message(self, session, message, is_error=False):
+        """Universal message display method"""
+        from Screens.MessageBox import MessageBox
+        try:
+            session.open(
+                MessageBox,
+                message,
+                MessageBox.TYPE_ERROR if is_error else MessageBox.TYPE_INFO,
+                timeout=10
+            )
+        except Exception as e:
+            print("Failed to show message:", str(e))
+
+    def _search(self, title, filepath, langs, season, episode, tvshow, year):
+        """Override search to include API key check"""
+        api_key = self.settings_provider.getSetting("Subdl_API_KEY")
+        
+        if not api_key:
+            return {
+                'list': [],
+                'session_id': "",
+                'msg': _("Subdl.com requires an API key")
+            }
+            
+        return super(SubdlSeeker, self)._search(
+            title, filepath, langs, season, episode, tvshow, year
+        )
 
 
 
