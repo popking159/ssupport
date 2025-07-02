@@ -5277,11 +5277,12 @@ class SubsSearchProviderMenu(BaseMenuScreen):
         title = toString(provider.provider_name) + " " + _("settings")
         BaseMenuScreen.__init__(self, session, title)
         self.provider = provider
-        self.backup_path = "/etc/enigma2/subssupport"
-        self.backup_file = os.path.join(self.backup_path, f"{provider.id}_credentials.json")
-        
+        if hasattr(provider, 'setSession'):
+            provider.setSession(session)        
+        self.backup_path = "/etc/enigma2/subssupport"        
         if not os.path.exists(self.backup_path):
-            os.makedirs(self.backup_path, mode=0o755)
+            os.makedirs(self.backup_path, mode=0o755)        
+        self.backup_file = os.path.join(self.backup_path, f"{provider.id}_credentials.json")
         
         # Initialize all key labels
         self["key_red"] = Label(_("Cancel"))
@@ -5333,27 +5334,47 @@ class SubsSearchProviderMenu(BaseMenuScreen):
 
     def _testCredentials(self, *args):
         """Handle credential test result"""
+        from twisted.internet import reactor
+        from functools import partial
+
         deferred = self.provider.test_credentials()
-        deferred.addCallbacks(self._onTestSuccess, self._onTestError)
+        
+        def show_gui_message(session, message, is_error=False):
+            if hasattr(self.provider, 'show_message'):
+                self.provider.show_message(session, message, is_error)
+            else:
+                from Screens.MessageBox import MessageBox
+                try:
+                    session.open(
+                        MessageBox,
+                        message,
+                        MessageBox.TYPE_ERROR if is_error else MessageBox.TYPE_INFO,
+                        timeout=10
+                    )
+                except Exception as e:
+                    print("Failed to show message:", str(e))
 
-    def _onTestSuccess(self, result):
-        """Show successful login details"""
-        user = result.get('user', {})
-        message = (
-            _("Login successful!") + "\n\n" +
-            _("User: %s") % user.get('user_id', '') + "\n" +
-            _("Level: %s") % user.get('level', '') + "\n" +
-            _("Downloads left: %s") % user.get('allowed_downloads', '')
-        )
-        self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
+        def onSuccess(result):
+            if isinstance(result, dict) and 'user' in result:  # OpenSubtitles response
+                user = result.get('user', {})
+                message = (
+                    _("Login successful!") + "\n\n" +
+                    _("User ID: %s") % user.get('user_id', 'N/A') + "\n" +
+                    _("Level: %s") % user.get('level', 'N/A') + "\n" +
+                    _("VIP: %s") % (_("Yes") if user.get('vip') else _("No")) + "\n" +
+                    _("Downloads left: %s") % user.get('allowed_downloads', 0) + "\n" +
+                    _("Translations left: %s") % user.get('allowed_translations', 0)
+                )
+            else:  # Subdl or other providers
+                message = str(result)
+            
+            reactor.callFromThread(partial(show_gui_message, self.session, message))
 
-    def _onTestError(self, failure):
-        """Show login failure"""
-        self.session.open(
-            MessageBox,
-            _("Login failed:") + f" {str(failure.value)}",
-            MessageBox.TYPE_ERROR
-        )
+        def onError(failure):
+            error_msg = _("Error: %s") % str(failure.value)
+            reactor.callFromThread(partial(show_gui_message, self.session, error_msg, True))
+
+        deferred.addCallbacks(onSuccess, onError)
 
     def keyResetDefaults(self):
         """Blue button - Reset to defaults"""

@@ -3,21 +3,28 @@ from . import _
 from Components.ActionMap import ActionMap
 from Components.Sources.List import List
 from Components.PluginComponent import PluginDescriptor
-from Components.config import config
+from Components.config import config, ConfigSubsection, ConfigText, ConfigYesNo, ConfigSelection, ConfigNumber, ConfigFloat
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from twisted.web.client import getPage
 from Screens.Console import Console
 import six
 import logging
+import os
+import json
+from Tools.Directories import fileExists
 
 from .e2_utils import isFullHD
 from .subtitles import E2SubsSeeker, SubsSearch, initSubsSettings, \
     SubsSetupGeneral, SubsSearchSettings, SubsSetupExternal, SubsSetupEmbedded
 from .subtitlesdvb import SubsSupportDVB, SubsSetupDVBPlayer
 
-VER = "1.7.0.22"
+VER = "1.7.0.24"
 log = logging.getLogger("SubsSupport")
+#config.plugins.subtitlesSupport = ConfigSubsection()
+
+SETTINGS_BACKUP_PATH = "/etc/enigma2/subssupport"
+SETTINGS_BACKUP_FILE = os.path.join(SETTINGS_BACKUP_PATH, "settings_backup.json")
 
 def openSubtitlesSearch(session, **kwargs):
     settings = initSubsSettings().search
@@ -85,12 +92,22 @@ class SubsSupportSettings(Screen):
         self.dvbSettings = dvbSettings
         self.new_version = None
         self.new_description = None
-        self["menuList"] = List([
+        
+        # Create backup directory if it doesn't exist
+        if not os.path.exists(SETTINGS_BACKUP_PATH):
+            os.makedirs(SETTINGS_BACKUP_PATH)
+            
+        menu_items = [
             (_("General settings"), "general"),
             (_("External subtitles settings"), "external"),
             (_("Embedded subtitles settings"), "embedded"),
             (_("Search settings"), "search"),
-            (_("DVB player settings"), "dvb")])
+            (_("DVB player settings"), "dvb"),
+            (_("Backup settings"), "backup"),
+            (_("Restore settings"), "restore")
+        ]
+        
+        self["menuList"] = List(menu_items)
         self["actionmap"] = ActionMap(["OkCancelActions", "DirectionActions"],
         {
             "up": self["menuList"].selectNext,
@@ -117,6 +134,10 @@ class SubsSupportSettings(Screen):
             self.openSearchSettings()
         elif selection == "dvb":
             self.openDVBPlayerSettings()
+        elif selection == "backup":
+            self.backupSettings()
+        elif selection == "restore":
+            self.restoreSettings()  # Changed from _confirmRestore to restoreSettings
 
     def openGeneralSettings(self):
         self.session.open(SubsSetupGeneral, self.generalSettings)
@@ -138,6 +159,88 @@ class SubsSupportSettings(Screen):
 
     def openDVBPlayerSettings(self):
         self.session.open(SubsSetupDVBPlayer, self.dvbSettings)
+
+    def backupSettings(self):
+        try:
+            # Create backup directory if needed
+            if not os.path.exists(SETTINGS_BACKUP_PATH):
+                os.makedirs(SETTINGS_BACKUP_PATH)
+            
+            # Extract all subtitlesSupport settings
+            settings_file = '/etc/enigma2/settings'
+            if not fileExists(settings_file):
+                raise Exception("Settings file not found")
+            
+            # Extract all settings for our plugin
+            with open(settings_file, 'r') as f, open(SETTINGS_BACKUP_FILE, 'w') as backup:
+                for line in f:
+                    if line.startswith('config.plugins.subtitlesSupport.'):
+                        backup.write(line)
+            
+            # Verify backup
+            if not fileExists(SETTINGS_BACKUP_FILE) or os.path.getsize(SETTINGS_BACKUP_FILE) == 0:
+                raise Exception("Backup file creation failed")
+            
+            self.session.open(MessageBox, _("Settings backup completed successfully!"), MessageBox.TYPE_INFO)
+        except Exception as e:
+            log.error("Backup failed: %s", str(e), exc_info=True)
+            self.session.open(MessageBox, _("Backup failed!") + "\n" + str(e), MessageBox.TYPE_ERROR)
+
+    def restoreSettings(self):
+        message = _("Are you sure you want to restore settings?\nEnigma2 will restart to apply changes.")
+        self.session.openWithCallback(self._performRestore, MessageBox, message, MessageBox.TYPE_YESNO)
+
+    def _performRestore(self, answer):
+        if not answer:
+            return
+        
+        try:
+            if not fileExists(SETTINGS_BACKUP_FILE):
+                self.session.open(MessageBox, _("No backup file found!"), MessageBox.TYPE_ERROR)
+                return
+            
+            # Create a restore script
+            restore_script = f"""#!/bin/sh
+    # Stop Enigma2
+    init 4
+    sleep 2
+
+    # Backup current settings
+    cp /etc/enigma2/settings /etc/enigma2/settings.bak
+
+    # Remove existing plugin settings
+    grep -v '^config.plugins.subtitlesSupport.' /etc/enigma2/settings > /tmp/settings.tmp
+
+    # Add our backed up settings
+    cat {SETTINGS_BACKUP_FILE} >> /tmp/settings.tmp
+
+    # Replace settings file
+    mv /tmp/settings.tmp /etc/enigma2/settings
+    rm -f /tmp/settings.tmp
+
+    # Restart Enigma2
+    sleep 1
+    init 3
+    """
+            
+            script_path = '/tmp/subssupport_restore.sh'
+            with open(script_path, 'w') as f:
+                f.write(restore_script)
+            os.chmod(script_path, 0o755)
+            
+            # Execute the restore through Console
+            self.session.open(
+                Console,
+                title=_("Restoring Settings..."),
+                cmdlist=[script_path],
+                closeOnSuccess=False
+            )
+            self.close()
+            
+        except Exception as e:
+            log.error("Restore failed: %s", str(e), exc_info=True)
+            self.session.open(MessageBox, _("Restore failed!") + "\n" + str(e), MessageBox.TYPE_ERROR)
+
 
     def checkUpdates(self):
         try:
