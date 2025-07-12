@@ -1,2 +1,2 @@
-version='1.7.0.24'
-description='1-modify test your opensubtitles.com credentials \n2-add test your subdl credentials  \n3-add backup and restore function for all plugin settings \n4-fix crash of yellow button if no credentials in the provider'
+version='1.7.0.25'
+description='1-In general settings , you can select your preferred location for backup settings . \n2-Fix error in subdl and subsource if search string is empty .  \n3-Improve title matching for subdl and subsource for better results . \n4-Add new function in subsearch screen , you can view subssupport log file from m within the plugin by click info button , so if you get error , failed search or failed download , you can click info button to view the log , and for your security, the credentials part was excluded and it will not be shown .'
