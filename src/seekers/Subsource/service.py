@@ -73,6 +73,7 @@ def getSearchTitle(title, year=None):
         print(f"Error fetching search results: {e}")
         return None
 
+    candidates = []
     if response_json.get("success"):
         found_movies = response_json.get("found", [])
         for res in found_movies:
@@ -80,19 +81,77 @@ def getSearchTitle(title, year=None):
                 name = res.get('title')
                 release_year = res.get('releaseYear')
                 linkName = res.get('linkName')
+                media_type = res.get('type', 'Movie')
                 
-                if not linkName:
-                    continue  # Skip if no linkName
-                
-                print(f"Found: {name} ({release_year}) -> {linkName}")
-                return linkName
-
+                if linkName:
+                    candidate = {
+                        'title': name,
+                        'year': release_year,
+                        'linkName': linkName,
+                        'type': media_type,
+                        'score': res.get('sim', 0)  # Use similarity score for ranking
+                    }
+                    candidates.append(candidate)
+                    print(f"Found candidate: {name} ({release_year}) [{media_type}] -> {linkName}")
             except KeyError as e:
                 print(f"Missing key: {e}")
-                continue  # Continue to the next result if one fails
+                continue
 
-    print("FAILED")
-    return None  # Ensure None is returned if nothing is found
+    if not candidates:
+        return None
+
+    # Try to find exact title match first
+    exact_matches = [c for c in candidates 
+                    if c['title'].lower() == title.lower() 
+                    and c['type'] == 'Movie']
+    
+    if year:
+        try:
+            year_int = int(year)
+            # Filter by year if available
+            exact_matches = [c for c in exact_matches 
+                            if c['year'] == year_int]
+        except ValueError:
+            pass  # Ignore invalid year values
+    
+    # If we have exact matches after filtering, use the best one
+    if exact_matches:
+        # Sort by similarity score (higher is better)
+        exact_matches.sort(key=lambda x: x['score'], reverse=True)
+        best_match = exact_matches[0]
+        print(f"Using exact match: {best_match['title']} ({best_match['year']})")
+        return best_match['linkName']
+    
+    # If no exact matches, look for title contains match
+    contains_matches = [c for c in candidates 
+                       if title.lower() in c['title'].lower()
+                       and c['type'] == 'Movie']
+    
+    if year:
+        try:
+            year_int = int(year)
+            contains_matches = [c for c in contains_matches 
+                               if c['year'] == year_int]
+        except ValueError:
+            pass
+    
+    if contains_matches:
+        contains_matches.sort(key=lambda x: x['score'], reverse=True)
+        best_match = contains_matches[0]
+        print(f"Using partial match: {best_match['title']} ({best_match['year']})")
+        return best_match['linkName']
+    
+    # Finally, just use the highest scoring movie candidate
+    movie_candidates = [c for c in candidates if c['type'] == 'Movie']
+    if movie_candidates:
+        movie_candidates.sort(key=lambda x: x['score'], reverse=True)
+        best_match = movie_candidates[0]
+        print(f"Using highest scoring movie: {best_match['title']} ({best_match['year']})")
+        return best_match['linkName']
+    
+    # If no movies found, use first candidate (might be TV series)
+    print("No movie found, using first candidate")
+    return candidates[0]['linkName']
 
 def getSearchTitle_tv(title):
     url = __api + "searchMovie"
@@ -290,22 +349,47 @@ def search_manual(searchstr, languages, filename):
 def search_subtitles(file_original_path, title, tvshow, year, season, episode, set_temp, rar, lang1, lang2, lang3, stack):  # standard input
     log(__name__, "%s Search_subtitles = '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'" %
          (debug_pretext, file_original_path, title, tvshow, year, season, episode, set_temp, rar, lang1, lang2, lang3, stack))
+    
+    # Initialize empty sublist to avoid UnboundLocalError
+    sublist = []
+    
+    # Handle language aliases
     if lang1 == 'Farsi':
         lang1 = 'Persian'
     if lang2 == 'Farsi':
         lang2 = 'Persian'
     if lang3 == 'Farsi':
         lang3 = 'Persian'
-    if tvshow:
-        sublist = search_tvshow(tvshow, season, episode, [lang1, lang2, lang3], file_original_path)
-    elif title:
-        sublist = search_movie(title, year, [lang1, lang2, lang3], file_original_path)
-    else:
-        try:
-          sublist = search_manual(title, [lang1, lang2, lang3], file_original_path)
-        except:
-            print("error")
-    return sublist, "", ""
+    
+    # Check if we have something to search for
+    if not title and not tvshow and not file_original_path:
+        log(__name__, "Nothing to search for - empty title, tvshow and file path")
+        return sublist, "", ""
+    
+    try:
+        if tvshow:
+            sublist = search_tvshow(tvshow, season, episode, [lang1, lang2, lang3], file_original_path)
+        elif title:
+            sublist = search_movie(title, year, [lang1, lang2, lang3], file_original_path)
+        else:
+            # Try to extract title from filename if available
+            if file_original_path:
+                try:
+                    filename = os.path.basename(file_original_path)
+                    # Simple pattern to extract title from filename (adjust as needed)
+                    match = re.match(r'^(.*?)(?:\.\d{4}|\.S\d{2}E\d{2}|\.\d{3,4}p|\.\w{2,3})?\.\w+$', filename)
+                    if match:
+                        derived_title = match.group(1).replace('.', ' ').strip()
+                        log(__name__, f"Derived title from filename: {derived_title}")
+                        sublist = search_movie(derived_title, year, [lang1, lang2, lang3], file_original_path)
+                except Exception as e:
+                    log(__name__, f"Error extracting title from filename: {e}")
+        
+        return sublist, "", ""
+    
+    except Exception as e:
+        log(__name__, f"Error in search_subtitles: {e}")
+        return sublist, "", ""
 
 def download_subtitles (subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, session_id):  # standard input
     sub_id = subtitles_list[pos][ "sub_id" ]
