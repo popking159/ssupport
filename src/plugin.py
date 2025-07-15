@@ -15,16 +15,13 @@ import json
 from Tools.Directories import fileExists
 
 from .e2_utils import isFullHD
-from .subtitles import E2SubsSeeker, SubsSearch, initSubsSettings, \
+from .subtitles import E2SubsSeeker, SubsSearch, initGeneralSettings, initSubsSettings, \
     SubsSetupGeneral, SubsSearchSettings, SubsSetupExternal, SubsSetupEmbedded
 from .subtitlesdvb import SubsSupportDVB, SubsSetupDVBPlayer
 
-VER = "1.7.0.24"
+VER = "1.7.0.25"
 log = logging.getLogger("SubsSupport")
-#config.plugins.subtitlesSupport = ConfigSubsection()
 
-SETTINGS_BACKUP_PATH = "/etc/enigma2/subssupport"
-SETTINGS_BACKUP_FILE = os.path.join(SETTINGS_BACKUP_PATH, "settings_backup.json")
 
 def openSubtitlesSearch(session, **kwargs):
     settings = initSubsSettings().search
@@ -93,9 +90,15 @@ class SubsSupportSettings(Screen):
         self.new_version = None
         self.new_description = None
         
-        # Create backup directory if it doesn't exist
-        if not os.path.exists(SETTINGS_BACKUP_PATH):
-            os.makedirs(SETTINGS_BACKUP_PATH)
+        # Get backup path from config - with proper error handling
+        try:
+            self.settings_backup_path = self.generalSettings.settingsBackupPath.getValue()
+            self.settings_backup_file = os.path.join(self.settings_backup_path, "settings_backup.json")
+        except AttributeError:
+            # Fallback to default path if setting is missing
+            log.error("settingsBackupPath not found in generalSettings, using default")
+            self.settings_backup_path = "/etc/enigma2/subssupport"
+            self.settings_backup_file = os.path.join(self.settings_backup_path, "settings_backup.json")
             
         menu_items = [
             (_("General settings"), "general"),
@@ -162,24 +165,39 @@ class SubsSupportSettings(Screen):
 
     def backupSettings(self):
         try:
-            # Create backup directory if needed
-            if not os.path.exists(SETTINGS_BACKUP_PATH):
-                os.makedirs(SETTINGS_BACKUP_PATH)
+            # Get the backup path from config
+            backup_path = self.generalSettings.settingsBackupPath.getValue()
+            backup_file = os.path.join(backup_path, "settings_backup.json")
+            
+            # Create backup directory if it doesn't exist
+            if not os.path.exists(backup_path):
+                os.makedirs(backup_path)
+            
+            # Verify we can write to the directory
+            test_file = os.path.join(backup_path, "test.tmp")
+            try:
+                with open(test_file, 'w') as f:
+                    f.write("test")
+                os.remove(test_file)
+            except IOError as e:
+                raise Exception(_("Cannot write to backup directory: %s") % str(e))
             
             # Extract all subtitlesSupport settings
             settings_file = '/etc/enigma2/settings'
             if not fileExists(settings_file):
-                raise Exception("Settings file not found")
+                raise Exception(_("Settings file not found"))
             
             # Extract all settings for our plugin
-            with open(settings_file, 'r') as f, open(SETTINGS_BACKUP_FILE, 'w') as backup:
+            with open(settings_file, 'r') as f, open(backup_file, 'w') as backup:
                 for line in f:
                     if line.startswith('config.plugins.subtitlesSupport.'):
                         backup.write(line)
             
-            # Verify backup
-            if not fileExists(SETTINGS_BACKUP_FILE) or os.path.getsize(SETTINGS_BACKUP_FILE) == 0:
-                raise Exception("Backup file creation failed")
+            # Verify backup was created
+            if not fileExists(backup_file):
+                raise Exception(_("Backup file creation failed"))
+            if os.path.getsize(backup_file) == 0:
+                raise Exception(_("Backup file is empty - no settings found"))
             
             self.session.open(MessageBox, _("Settings backup completed successfully!"), MessageBox.TYPE_INFO)
         except Exception as e:
@@ -187,16 +205,26 @@ class SubsSupportSettings(Screen):
             self.session.open(MessageBox, _("Backup failed!") + "\n" + str(e), MessageBox.TYPE_ERROR)
 
     def restoreSettings(self):
-        message = _("Are you sure you want to restore settings?\nEnigma2 will restart to apply changes.")
+        backup_path = self.generalSettings.settingsBackupPath.getValue()
+        backup_file = os.path.join(backup_path, "settings_backup.json")
+        
+        if not fileExists(backup_file):
+            self.session.open(MessageBox, _("No backup file found at: %s") % backup_file, MessageBox.TYPE_ERROR)
+            return
+        
+        message = _("Are you sure you want to restore settings from:\n%s\n\nEnigma2 will restart to apply changes.") % backup_file
         self.session.openWithCallback(self._performRestore, MessageBox, message, MessageBox.TYPE_YESNO)
 
     def _performRestore(self, answer):
         if not answer:
             return
         
+        backup_path = self.generalSettings.settingsBackupPath.getValue()
+        backup_file = os.path.join(backup_path, "settings_backup.json")
+        
         try:
-            if not fileExists(SETTINGS_BACKUP_FILE):
-                self.session.open(MessageBox, _("No backup file found!"), MessageBox.TYPE_ERROR)
+            if not fileExists(backup_file):
+                self.session.open(MessageBox, _("Backup file no longer exists!"), MessageBox.TYPE_ERROR)
                 return
             
             # Create a restore script
@@ -212,7 +240,7 @@ class SubsSupportSettings(Screen):
     grep -v '^config.plugins.subtitlesSupport.' /etc/enigma2/settings > /tmp/settings.tmp
 
     # Add our backed up settings
-    cat {SETTINGS_BACKUP_FILE} >> /tmp/settings.tmp
+    cat "{backup_file}" >> /tmp/settings.tmp
 
     # Replace settings file
     mv /tmp/settings.tmp /etc/enigma2/settings

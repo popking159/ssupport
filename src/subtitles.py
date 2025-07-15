@@ -25,6 +25,7 @@ import re
 import sys
 from threading import Thread
 import traceback
+from Components.ScrollLabel import ScrollLabel
 from twisted.internet.defer import Deferred
 from twisted.web import client
 from Screens.Console import Console
@@ -244,6 +245,8 @@ alphaChoiceList.append(("ff", _("transparent")))
 def initGeneralSettings(configsubsection):
     configsubsection.pauseVideoOnSubtitlesMenu = ConfigYesNo(default=True)
     configsubsection.encodingsGroup = ConfigSelection(default="Arabic", choices=[(e, _(e)) for e in ENCODINGS.keys()])
+    configsubsection.settingsBackupPath = ConfigDirectory(default="/etc/enigma2/subssupport")
+    return configsubsection
 
 
 def initExternalSettings(configsubsection):
@@ -2240,6 +2243,7 @@ class SubsSetupMainMisc(BaseMenuScreen):
         configList.append(getConfigListEntry("-" * 200, ConfigNothing()))
         configList.extend(SubsSetupExternal.getConfigList(self.subsSettings.external))
         configList.append(getConfigListEntry(_("Encoding"), self.subsSettings.encodingsGroup))
+        configList.append(getConfigListEntry(_("Settings Backup Path"), self.subsSettings.settingsBackupPath))
         configList.append(getConfigListEntry(_("Show expert settings"), self.showExpertSettings))
         if self.showExpertSettings.value:
             engineSettings = self.subsSettings.engine
@@ -2333,13 +2337,27 @@ class SubsSetupGeneral(BaseMenuScreen):
     def __init__(self, session, generalSettings):
         BaseMenuScreen.__init__(self, session, _("General settings"))
         self.generalSettings = generalSettings
-
+        self["okactions"] = ActionMap(["OkActions"],
+        {
+            "okbutton": self.keyOk,
+        }, -1)
     def buildMenu(self):
         self["config"].setList([
             getConfigListEntry(_("Pause video on opening subtitles menu"), self.generalSettings.pauseVideoOnSubtitlesMenu),
             getConfigListEntry(_("Encoding"), self.generalSettings.encodingsGroup),
+            getConfigListEntry(_("Settings Backup Path"), self.generalSettings.settingsBackupPath),
         ])
 
+    def keyOk(self):
+        current = self['config'].getCurrent()[1]
+        if current == self.generalSettings.settingsBackupPath:
+            currentPath = self.generalSettings.settingsBackupPath.value
+            self.session.openWithCallback(self.setSettingsBackupPath, LocationBox, "", "", currentPath)
+    
+    def setSettingsBackupPath(self, settingsBackupPath=None):
+        if settingsBackupPath:
+            self.generalSettings.settingsBackupPath.value = settingsBackupPath
+            self.buildMenu()
 
 def FileEntryComponent(name, absolute=None, isDir=False):
     res = [(absolute, isDir)]
@@ -3935,6 +3953,81 @@ class SubsSearchContextMenu(Screen):
     def getSelection(self):
         return self.options[self["context_menu"].index][1]
 
+class SubsSupportLogScreen(Screen):
+    if isFullHD():
+        skin = """
+        <screen position="center,center" size="1200,700" title="SubsSupport Log" zPosition="10">
+            <widget name="logtext" position="10,10" size="1180,640" font="Regular;28" />
+            <ePixmap pixmap="skin_default/buttons/red.png" position="10,660" size="35,25" transparent="1" alphatest="on" />
+            <widget source="key_red" render="Label" position="50,660" size="150,30" font="Regular;28" halign="left" valign="center" />
+        </screen>
+        """
+    else:
+        skin = """
+        <screen position="center,center" size="800,500" title="SubsSupport Log" zPosition="10">
+            <widget name="logtext" position="10,10" size="780,440" font="Regular;20" />
+            <ePixmap pixmap="skin_default/buttons/red.png" position="10,460" size="35,25" transparent="1" alphatest="on" />
+            <widget source="key_red" render="Label" position="50,460" size="100,25" font="Regular;20" halign="left" valign="center" />
+        </screen>
+        """
+    
+    def __init__(self, session):
+        Screen.__init__(self, session)
+        self.setTitle(_("SubsSupport Log"))
+        self["logtext"] = ScrollLabel()
+        self["key_red"] = StaticText(_("Close"))
+        
+        # Updated ActionMap with scroll controls
+        self["actions"] = ActionMap(["OkCancelActions", "ColorActions", "DirectionActions"],
+        {
+            "ok": self.close,
+            "cancel": self.close,
+            "red": self.close,
+            "left": self.pageUp,
+            "right": self.pageDown,
+            "up": self.pageUp,
+            "down": self.pageDown,
+            "pageUp": self.pageUp,
+            "pageDown": self.pageDown
+        })
+        self.onLayoutFinish.append(self.loadLog)
+
+    def loadLog(self):
+        log_content = ""
+        log_path = "/var/volatile/tmp/subssupport.log"
+        try:
+            if os.path.exists(log_path):
+                with open(log_path, "r") as log_file:
+                    # Read the entire file
+                    full_log = log_file.read()
+                    
+                    # Find the first occurrence of "[SubsSeeker][info]"
+                    start_index = full_log.find("[SubsSeeker][info]")
+                    
+                    if start_index != -1:
+                        # Extract from the first occurrence to the end
+                        log_content = full_log[start_index:]
+                    else:
+                        log_content = _("No SubsSeeker info found in log")
+            else:
+                log_content = _("Log file not found")
+        except Exception as e:
+            log_content = _("Error reading log:") + " " + str(e)
+        
+        self["logtext"].setText(log_content)
+        self["logtext"].lastPage()
+
+    def pageUp(self):
+        self["logtext"].pageUp()
+
+    def pageDown(self):
+        self["logtext"].pageDown()
+
+    def up(self):
+        self["logtext"].instance.moveSelection(self["logtext"].instance.moveUp)
+
+    def down(self):
+        self["logtext"].instance.moveSelection(self["logtext"].instance.moveDown)
 
 class SubsSearch(Screen):
     if isFullHD():
@@ -3981,13 +4074,14 @@ class SubsSearch(Screen):
                 <convert type="ConditionalShowHide" />
             </widget>
             <ePixmap  pixmap="skin_default/buttons/key_red.png" position="50,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_red" render="Label" position = "93,727" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <widget source="key_red" render="Label" position = "93,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_green.png" position="371,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_green" render="Label" position = "414,727" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <widget source="key_green" render="Label" position = "414,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_yellow.png" position="692,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_yellow" render="Label" position = "735,727" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <widget source="key_yellow" render="Label" position = "735,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_blue.png" position="1013,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_blue" render="Label" position = "1056,727" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <widget source="key_blue" render="Label" position = "1056,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <ePixmap pixmap="skin_default/buttons/key_info.png" position="1360,727" size="35,25" transparent="1" alphatest="on" />
         </screen>
         """
     else:
@@ -4041,6 +4135,7 @@ class SubsSearch(Screen):
             <widget source="key_yellow" render="Label" position = "405, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_blue.png" position="525,485" size="35,25" transparent="1" alphatest="on" />
             <widget source="key_blue" render="Label" position = "565, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
+            <ePixmap pixmap="skin_default/buttons/key_info.png" position="700,485" size="35,25" transparent="1" alphatest="on" />
         </screen> """
 
     def __init__(self, session, seeker, searchSettings, filepath=None, searchTitles=None, resetSearchParams=True, standAlone=False):
@@ -4075,6 +4170,7 @@ class SubsSearch(Screen):
         self["header_sync"] = StaticText(_("S"))
         self["subtitles"] = List([])
         self["key_menu_img"] = Boolean()
+        #self["key_info_img"] = Boolean()
         self["key_red"] = StaticText(_("Update"))
         self["key_green"] = StaticText(_("Search"))
         self["key_yellow"] = StaticText(_("History"))
@@ -4084,7 +4180,7 @@ class SubsSearch(Screen):
             "ok": self.keyOk,
             "cancel": self.keyCancel,
         })
-        self["menuActions"] = ActionMap(["ColorActions", "MenuActions"],
+        self["menuActions"] = ActionMap(["ColorActions", "MenuActions", "InfoActions"],
         {
             "red": self.updateSearchParams,
             "green": self.searchSubs,
@@ -4092,6 +4188,7 @@ class SubsSearch(Screen):
             "blue": self.openSettings,
 
             "menu": self.openContextMenu,
+            "info": self.showLogScreen,
          })
 
         self["listActions"] = ActionMap(["DirectionActions"],
@@ -4163,6 +4260,9 @@ class SubsSearch(Screen):
         self.onClose.append(self.searchParamsHelper.resetSearchParams)
         self.onClose.append(self.stopSearchSubs)
         self.onClose.append(self.closeSeekers)
+
+    def showLogScreen(self):
+        self.session.open(SubsSupportLogScreen)
 
     def __getSubtitlesRenderer(self):
         from Components.Sources.Source import Source
@@ -4237,17 +4337,20 @@ class SubsSearch(Screen):
             self["key_yellow"].text = ""
             self["key_blue"].text = ""
             self["key_menu_img"].boolean = False
+            #self["key_info_img"].boolean = False
         elif self.__downloading:
             self["key_red"].text = ""
             self["key_green"].text = ""
             self["key_yellow"].text = ""
             self["key_blue"].text = ""
             self["key_menu_img"].boolean = False
+            #self["key_info_img"].boolean = False
         else:
             self["key_red"].text = (_("Update"))
             self["key_green"].text = (_("Search"))
             self["key_yellow"].text = (_("History"))
             self["key_blue"].text = (_("Settings"))
+            #self["key_info_img"].boolean = True
             if self["subtitles"].count() > 0:
                 self["key_menu_img"].boolean = True
 
@@ -4688,6 +4791,7 @@ class SubsSearch(Screen):
                 self.searchSubs()
 
         self.session.openWithCallback(openSettingsCB, SubsSearchSettings, self.searchSettings, self.seeker, self.isLocalFilepath)
+
 
 
 class SubsSearchSettings(Screen, ConfigListScreen):

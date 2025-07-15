@@ -8,7 +8,9 @@
 	<map context="InfoActions">
 		<key id="KEY_INFO" mapto="info" flags="m" />
 	</map>
-
+	<map context="OkActions">
+		<key id="KEY_OK" mapto="okbutton" flags="m" />
+	</map>
 	<map context="SubtitlesDVBActions">
 		<key id="KEY_LEFT" mapto="prevSub" flags="m" />
 		<key id="KEY_RIGHT" mapto="nextSub" flags="m" />
