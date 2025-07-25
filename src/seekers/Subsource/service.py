@@ -235,11 +235,10 @@ def search_movie(title, year, languages, filename):
                     lang_info = get_language_info(language_name)
                     
                     if lang_info and lang_info['name'] in languages:
-                        sync = filename and subtitle_name.lower() == filename.lower()
-                            
+                        # Always set sync to True as requested
                         subtitles.append({
                             'filename': subtitle_name,
-                            'sync': sync,
+                            'sync': True,  # Always True
                             'link': link,
                             'language_name': language_name,
                             'lang': lang_info,
@@ -252,7 +251,7 @@ def search_movie(title, year, languages, filename):
             print(f"Error fetching subtitles: {e}")
             return subtitles
 
-        subtitles.sort(key=lambda x: (not x['sync'], x.get('upload_date', '')), reverse=True)
+        # Remove sorting since it's not needed
         return subtitles
 
     except Exception as error:
@@ -304,8 +303,9 @@ def search_tvshow(title, season, episode, languages, filename):
             link = f"{main_url}/{sub['link']}"
             api_path = sub['link']
             
-            sync = filename and subtitle_name.lower() == filename.lower()
-                
+            # Always set sync to True as requested
+            sync = True
+            
             if episode:
                 ep_pattern = re.compile(rf"S\d{{2}}E{int(episode):02d}", re.IGNORECASE)
                 if not ep_pattern.search(subtitle_name):
@@ -313,7 +313,7 @@ def search_tvshow(title, season, episode, languages, filename):
                     
             subtitles.append({
                 'filename': subtitle_name,
-                'sync': sync,
+                'sync': True,  # Always True
                 'link': link,
                 'language_name': language_name,
                 'lang': lang_info,
@@ -324,7 +324,7 @@ def search_tvshow(title, season, episode, languages, filename):
                 'upload_date': sub.get('upload_date', '')
             })
         
-        subtitles.sort(key=lambda x: (not x['sync'], x['upload_date']), reverse=True)
+        # Remove sorting since it's not needed
         return subtitles
         
     except Exception as error:
