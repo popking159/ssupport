@@ -2,6 +2,7 @@
 import os
 import re
 import requests
+import time
 from urllib.parse import quote_plus, unquote
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from ..utilities import languageTranslate, log, getFileSize
@@ -9,10 +10,10 @@ from ..seeker import SubtitlesDownloadError, SubtitlesErrors
 
 # Suppress insecure request warnings
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
+from ..user_agents import get_random_ua
 # Constants
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:109.0) Gecko/20100101 Firefox/115.0',
+    'User-Agent': get_random_ua(),
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
     'Content-Type': 'text/html; charset=UTF-8',
@@ -26,6 +27,9 @@ HEADERS = {
 SESSION = requests.Session()
 MAIN_URL = "https://archive.org"
 DEBUG_PRETEXT = "archive.org"
+CACHE_DIR = "/var/volatile/tmp"
+CACHE_FILE = os.path.join(CACHE_DIR, "archive_org_mora25r.html")
+CACHE_TIMEOUT = 86400  # 24 hours in seconds
 
 def get_url(url, referer=None):
     headers = {'User-Agent': HEADERS['User-Agent']}
@@ -37,6 +41,62 @@ def get_url(url, referer=None):
 
 def get_rating(downloads):
     return min(10, max(1, downloads // 50 + 1))
+
+ROMAN_NUMERAL_MAP = [
+    (r'\bII\b', '2'), (r'\bIII\b', '3'), (r'\bIV\b', '4'), (r'\bV\b', '5'),
+    (r'\bVI\b', '6'), (r'\bVII\b', '7'), (r'\bVIII\b', '8'), (r'\bIX\b', '9'),
+    (r'\bX\b', '10'), (r'\bXI\b', '11'), (r'\bXII\b', '12'), (r'\bXIII\b', '13'),
+    (r'\bXIV\b', '14'), (r'\bXV\b', '15'), (r'\bXVI\b', '16'), (r'\bXVII\b', '17'),
+    (r'\bXVIII\b', '18'), (r'\bXIX\b', '19'), (r'\bXX\b', '20'), (r'\bI\b', '1')
+]
+
+def generate_title_variations(text):
+    """
+    Generate variations of a title with both Roman numerals and digits
+    """
+    variations = [text]
+    
+    # Convert Roman numerals to digits
+    digit_version = text
+    for roman, digit in ROMAN_NUMERAL_MAP:
+        digit_version = re.sub(roman, digit, digit_version, flags=re.IGNORECASE)
+    if digit_version != text:
+        variations.append(digit_version)
+    
+    # Convert digits to Roman numerals (reverse mapping)
+    for roman, digit in ROMAN_NUMERAL_MAP:
+        roman_version = re.sub(r'\b' + digit + r'\b', roman, text, flags=re.IGNORECASE)
+        if roman_version != text and roman_version not in variations:
+            variations.append(roman_version)
+    
+    return variations
+
+def get_cached_content():
+    """
+    Get content from cache if available and not expired
+    """
+    if os.path.exists(CACHE_FILE):
+        # Check if cache is still valid
+        if time.time() - os.path.getmtime(CACHE_FILE) < CACHE_TIMEOUT:
+            try:
+                with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except Exception as e:
+                log(__name__, f"{DEBUG_PRETEXT} Error reading cache: {e}")
+    
+    return None
+
+def save_content_to_cache(content):
+    """
+    Save content to cache file
+    """
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+            f.write(content)
+        log(__name__, f"{DEBUG_PRETEXT} Content cached to {CACHE_FILE}")
+    except Exception as e:
+        log(__name__, f"{DEBUG_PRETEXT} Error saving cache: {e}")
 
 def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, rar, lang1, lang2, lang3, stack):
     subtitles_list = []
@@ -65,11 +125,12 @@ def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, 
     for bad in bad_strings:
         title = title.replace(bad, "")
     
-    # Clean up remaining special characters and spaces
-    title = re.sub(r'[:,"&!?\-]', '', title).replace("  ", " ").strip()#.title()
+    title = re.sub(r'[:,"&!?\-]', '', title).replace("  ", " ").strip()
     title = re.sub(r"'", '', title)
-    
-    print(f"Cleaned title: {title}")  # Debug print
+    title_variations = generate_title_variations(title)
+    print(f"Title variations: {title_variations}")  # Debug print
+
+
     
     if tvshow:
         search_string = f"{tvshow} S{int(season):02d}E{int(episode):02d}" if title != tvshow else f"{tvshow} ({int(season):02d}{int(episode):02d})"
@@ -77,14 +138,58 @@ def search_subtitles(file_path, title, tvshow, year, season, episode, set_temp, 
         search_string = f"{title} ({year})" if year else title
     
     log(__name__, f"{DEBUG_PRETEXT} Search string = {search_string}")
-    get_subtitles_list(title, search_string, "ar", "Arabic", subtitles_list)
+    # Modify get_subtitles_list to accept multiple titles
+    for title_var in title_variations:
+        get_subtitles_list(title_var, search_string, "ar", "Arabic", subtitles_list)
     return subtitles_list, "", msg
+
+def get_subtitles_list(title, search_string, lang_short, lang_long, subtitles_list):
+    url = f"{MAIN_URL}/download/mora25r"
+    
+    # Try to get content from cache first
+    content = get_cached_content()
+    
+    if content is None:
+        # Content not in cache or cache expired, download it
+        log(__name__, f"{DEBUG_PRETEXT} Fetching: {url}")
+        try:
+            response = SESSION.get(url, headers=HEADERS, verify=False)
+            response.raise_for_status()
+            content = response.text
+            save_content_to_cache(content)
+        except requests.RequestException as e:
+            log(__name__, f"{DEBUG_PRETEXT} Failed to fetch subtitles: {e}")
+            return
+    else:
+        log(__name__, f"{DEBUG_PRETEXT} Using cached content from {CACHE_FILE}")
+    
+    try:
+        encoded_title = quote_plus(title).replace('+', '.')
+        subtitles = re.findall(rf'(<td><a href.+?>{encoded_title}.+?</a></td>)', content, re.IGNORECASE)
+        
+        for subtitle in subtitles:
+            match = re.search(r'<td><a href="(.+?)">(.+?)</a></td>', subtitle)
+            if match:
+                id_, filename = match.groups()
+                filename = filename.replace('.srt', '').strip()
+                if filename not in ['Εργαστήρι Υποτίτλων', 'subs4series']:
+                    log(__name__, f"{DEBUG_PRETEXT} Found subtitle: {filename} (id = {id_})")
+                    subtitles_list.append({
+                        'no_files': 1,
+                        'filename': filename,
+                        'sync': True,
+                        'id': id_,
+                        'language_flag': f'flags/{lang_short}.gif',
+                        'language_name': lang_long
+                    })
+    except Exception as e:
+        log(__name__, f"{DEBUG_PRETEXT} Error parsing subtitles: {e}")
 
 def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, session_id):
     subtitle_info = subtitles_list[pos]
     language = subtitle_info["language_name"]
     subtitle_id = subtitle_info["id"]    
-    print(subtitle_id)
+    print(("subtitle_id", subtitle_id))
     download_link = f"{MAIN_URL}/download/mora25r/{subtitle_id}"
     print(download_link)
     log(__name__, f"{DEBUG_PRETEXT} Downloading from: {download_link}")
@@ -124,35 +229,3 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
     
     log(__name__, f"{DEBUG_PRETEXT} Returning: packed={packed}, language={language}, subs_file={subs_file}")
     return packed, language, subs_file
-
-def get_subtitles_list(title, search_string, lang_short, lang_long, subtitles_list):
-    url = f"{MAIN_URL}/download/mora25r"
-    log(__name__, f"{DEBUG_PRETEXT} Fetching: {url}")
-    
-    try:
-        content = SESSION.get(url, headers=HEADERS, verify=False).text
-    except requests.RequestException as e:
-        log(__name__, f"{DEBUG_PRETEXT} Failed to fetch subtitles: {e}")
-        return
-    
-    try:
-        encoded_title = quote_plus(title).replace('+', '.')
-        subtitles = re.findall(rf'(<td><a href.+?>{encoded_title}.+?</a></td>)', content, re.IGNORECASE)
-        
-        for subtitle in subtitles:
-            match = re.search(r'<td><a href="(.+?)">(.+?)</a></td>', subtitle)
-            if match:
-                id_, filename = match.groups()
-                filename = filename.replace('.srt', '').strip()
-                if filename not in ['Εργαστήρι Υποτίτλων', 'subs4series']:
-                    log(__name__, f"{DEBUG_PRETEXT} Found subtitle: {filename} (id = {id_})")
-                    subtitles_list.append({
-                        'no_files': 1,
-                        'filename': filename,
-                        'sync': True,
-                        'id': id_,
-                        'language_flag': f'flags/{lang_short}.gif',
-                        'language_name': lang_long
-                    })
-    except Exception as e:
-        log(__name__, f"{DEBUG_PRETEXT} Error parsing subtitles: {e}")

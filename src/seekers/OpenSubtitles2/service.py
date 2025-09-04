@@ -168,7 +168,7 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
     language = subtitles_list[pos]["language_name"]
     #print(f"language_down: {language}")
     file_id = subtitles_list[pos]["id"]
-    #print(f"file_id_down: {file_id}")
+    print(f"file_id_down: {file_id}")
     url = f"{BASE_URL}/download"
     
     headers = {
