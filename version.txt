@@ -1,2 +1,2 @@
 version='1.7.0.27'
-description='1-Improve Novalermora and Subtitlesmora by adding caching system for 24 hours , that is saving bandwidth and multible searches more faster . \n2-Add Subf2m website. \n3-Remove Subscenebest .'
+description=' 1-Improve Novalermora and Subtitlesmora by adding caching system for 24 hours , that is saving bandwidth and multible searches more faster . \n 2-Add Subf2m website. \n 3-Remove Subscenebest .'
