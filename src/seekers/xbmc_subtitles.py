@@ -156,16 +156,16 @@ class LocalDriveSeeker(XBMCSubtitlesAdapter):
     default_settings = {'LocalSearchPath': {'label': _("Search Path"), 'type': 'text', 'default': "/media/hdd/subs", 'pos': 0} }
 
 try:
-    from .Subscenebest import subscenebest
+    from .Subf2m import subf2m
 except ImportError as e:
-    subscenebest = e
+    subf2m = e
 
-class SubscenebestSeeker(XBMCSubtitlesAdapter):
-    id = 'subscenebest'
-    module = subscenebest
+class Subf2mSeeker(XBMCSubtitlesAdapter):
+    id = 'subf2m'
+    module = subf2m
     if isinstance(module, Exception):
         error, module = module, None
-    provider_name = 'Subscenebest'
+    provider_name = 'Subf2m'
     supported_langs = allLang()
     default_settings = {}
 
@@ -212,22 +212,6 @@ class FoursubSeeker(XBMCSubtitlesAdapter):
     provider_name = 'Foursub'
     supported_langs = allLang()
     default_settings = {}
-
-try:
-    from .OpenSubtitlesMora import opensubtitlesmora
-except ImportError as e:
-    opensubtitlesmora = e
-
-
-class OpenSubtitlesMoraSeeker(XBMCSubtitlesAdapter):
-    module = opensubtitlesmora
-    if isinstance(module, Exception):
-        error, module = module, None
-    id = 'opensubtitlesmora'
-    provider_name = 'OpenSubtitles.mora'
-    supported_langs = ['ar']
-    default_settings = {}
-
 
 try:
     from .OpenSubtitles2 import opensubtitles2
