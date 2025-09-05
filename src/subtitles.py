@@ -2084,6 +2084,21 @@ class SubsMenu(Screen):
                 searchTitles.append(dirnameFix)
         return searchTitles
 
+### EDit By RAED For NewVirtualKeyBoard
+    def openKeyboard(self):
+        from Plugins.SystemPlugins.NewVirtualKeyBoard.VirtualKeyBoard import VirtualKeyBoard
+        text = self.searchSettings.title.value
+        from xbmctools import logdata
+        self.session.openWithCallback(self.boardCallBack, VirtualKeyBoard,text=text)
+
+    def boardCallBack(self,text=None):
+        if text:
+           self.searchSettings.title.value=text
+           self.close(True)
+        else:
+           self.close(False) 
+### End EDit
+
     def searchSubs(self):
         def checkDownloadedSubsSelection(downloadedSubtitle=None):
             if downloadedSubtitle:
@@ -4747,6 +4762,19 @@ class SubsSearch(Screen):
         self.__contextMenu.hide()
         self.updateActionMaps()
 
+### EDit By RAED For NewVirtualKeyBoard
+    def openKeyboard(self):
+        from Plugins.SystemPlugins.NewVirtualKeyBoard.VirtualKeyBoard import VirtualKeyBoard
+        self.session.openWithCallback(self.updateSearchParamsCB, VirtualKeyBoard)
+
+    def boardCallBack(self,text=None):
+        if text:
+           self.searchSettings.title.value=text
+           self.close(True)
+        else:
+           self.close(False) 
+### End EDit
+
     def updateSearchParams(self):
         def updateSearchParamsCB(callback=None):
             if callback:
@@ -5198,10 +5226,32 @@ class SubsSearchParamsMenu(Screen, ConfigListScreen):
         self['suggestionActions'].setEnabled(False)
         if resetSearchParams and titleList is not None:
             self.onLayoutFinish.append(self.detectSearchParams)
-        self.onLayoutFinish.append(self.buildMenu)
+       #self.onLayoutFinish.append(self.buildMenu) ### EDit By RAED For NewVirtualKeyBoard
         self.onLayoutFinish.append(self.setWindowTitle)
         self.onLayoutFinish.append(self.saveAll)
         self.onClose.append(self.removeSuggestionWindows)
+        self.onShown.append(self.onWindowShow) ### EDit By RAED For NewVirtualKeyBoard
+
+### EDit By RAED For NewVirtualKeyBoard
+    def onWindowShow(self):
+        self.onShown.remove(self.onWindowShow)
+        self.openKeyboard()
+
+    def openKeyboard(self):
+        from Plugins.SystemPlugins.NewVirtualKeyBoard.VirtualKeyBoard import VirtualKeyBoard
+        text=self.searchSettings.title.value
+        self.session.openWithCallback(self.boardCallBack, VirtualKeyBoard,text=text)
+
+    def boardCallBack(self,text=None):
+        if text:
+            self.searchSettings.title.value=text
+            self.searchSettings.type.value="movie"
+            self.addToHistory()
+            self.saveAll()
+            self.close(True)
+        else:
+           self.close(False)
+### End EDit
 
     def setWindowTitle(self):
         if self.windowTitle is not None:
