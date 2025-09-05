@@ -1,7 +1,7 @@
 #!/bin/sh
 ##setup command=wget -q "--no-check-certificate" https://github.com/popking159/ssupport/raw/main/subssupport-install.sh -O - | /bin/sh
 ######### Only These two lines to edit with new version ######
-#version='1.7.0.27'
+#version='1.7.0.28'
 ##############################################################
 echo ''
 echo '************************************************************'
@@ -9,7 +9,7 @@ echo "**                       STARTED                          **"
 echo '************************************************************'
 echo "**                  Uploaded by: MNASR                    **"
 echo "************************************************************"
-echo "**                 SubsSupport v1.7 r27                   **"
+echo "**                 SubsSupport v1.7 r28                   **"
 echo "************************************************************"
 echo "************************************************************"
 sleep 3s
