@@ -19,7 +19,7 @@ from .subtitles import E2SubsSeeker, SubsSearch, initGeneralSettings, initSubsSe
     SubsSetupGeneral, SubsSearchSettings, SubsSetupExternal, SubsSetupEmbedded
 from .subtitlesdvb import SubsSupportDVB, SubsSetupDVBPlayer
 
-VER = "1.7.0.27"
+VER = "1.7.0.28"
 log = logging.getLogger("SubsSupport")
 
 
