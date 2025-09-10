@@ -42,4 +42,8 @@
 		<key id="KEY_5" mapto="importsettings" flags="m" />
 		<key id="KEY_6" mapto="exportsettings" flags="m" />
 	</map>
+	<map context="SubtitlePickerActions">
+		<key id="KEY_CHANNELUP" mapto="firstSubtitle" flags="m" />
+		<key id="KEY_CHANNELDOWN" mapto="lastSubtitle" flags="m" />
+	</map>
 </keymap>

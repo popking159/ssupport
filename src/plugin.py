@@ -32,6 +32,21 @@ def openSubtitlesSearch(session, **kwargs):
         eventList.append(eventNow.getEventName())
     if eventNext:
         eventList.append(eventNext.getEventName())
+    
+    # If no events found, try to use the channel name as fallback
+    if not eventList:
+        try:
+            from enigma import iPlayableService
+            service = session.nav.getCurrentService()
+            info = service and service.info()
+            if info:
+                channel_name = info.getName()
+                if channel_name:
+                    eventList.append(channel_name)
+                    print(f"[SubsSupport] Using channel name as fallback: {channel_name}")
+        except Exception as e:
+            print(f"[SubsSupport] Error getting channel name: {e}")
+    
     session.open(SubsSearch, E2SubsSeeker(session, settings), settings, searchTitles=eventList, standAlone=True)
 
 
@@ -123,7 +138,7 @@ class SubsSupportSettings(Screen):
 
     def setWindowTitle(self):
         self.setup_title = _("SubsSupport settings")
-        self.setTitle(self.setup_title)
+        self.setTitle(f"{self.setup_title} v{VER}")
 
     def confirmSelection(self):
         selection = self["menuList"].getCurrent()[1]

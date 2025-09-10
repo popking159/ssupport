@@ -59,6 +59,20 @@ class SubsSupportDVB(object):
             eventList.append(eventNow.getEventName())
         if eventNext:
             eventList.append(eventNext.getEventName())
+        
+        # If no events found, try to use the channel name as fallback
+        if not eventList:
+            try:
+                service = self.session.nav.getCurrentService()
+                info = service and service.info()
+                if info:
+                    channel_name = info.getName()
+                    if channel_name:
+                        eventList.append(channel_name)
+                        print(f"[SubsSupportDVB] Using channel name as fallback: {channel_name}")
+            except Exception as e:
+                print(f"[SubsSupportDVB] Error getting channel name: {e}")
+        
         return eventList
 
     def subsChooserCB(self, subfile=None, embeddedSubtitle=None, forceReload=False):
@@ -103,11 +117,13 @@ class SubtitlePicker(Screen):
         self.subsList = subsList
         self.currentIndex = currentIndex
 
-        self["actions"] = ActionMap(["OkCancelActions", "ColorActions"], {
+        self["actions"] = ActionMap(["OkCancelActions", "ColorActions", "SubtitlePickerActions"], {
             "ok": self.selectSubtitle,
             "green": self.selectSubtitle,
             "cancel": self.close,
-            "red": self.close
+            "red": self.close,
+            "firstSubtitle": self.firstSubtitle,  # Map to channel up
+            "lastSubtitle": self.lastSubtitle,    # Map to channel down
         }, -1)
 
         self["subList"] = MenuList([], enableWrapAround=True, content=eListboxPythonMultiContent)
@@ -115,13 +131,19 @@ class SubtitlePicker(Screen):
         self["subList"].l.setFont(0, gFont("Regular", 24))  # Adjust font size
         self["key_red"] = StaticText("Cancel")
         self["key_green"] = StaticText("Select")
-        print(f"key_red: {self['key_red'].getText()}, key_green: {self['key_green'].getText()}")
 
         self.updateSubtitleList()
         self["key_red"].setText("Cancel")
         self["key_green"].setText("Select")
         self.onLayoutFinish.append(self.setInitialSelection)
-        print(f"Available widgets: {self.keys()}")
+    
+    def firstSubtitle(self):
+        """ Jump to the first subtitle """
+        self["subList"].moveToIndex(0)
+    
+    def lastSubtitle(self):
+        """ Jump to the last subtitle """
+        self["subList"].moveToIndex(len(self.subsList) - 1)
     
     def selectSubtitle(self):
         """ ✅ Select the highlighted subtitle and return it """
@@ -135,31 +157,37 @@ class SubtitlePicker(Screen):
         menuItems = []
 
         for sub in self.subsList:
-            #cap_number = str(sub.get("index", 0) + 1)  # Ensure index is a string
             cap_number = f"{sub['index'] + 1}" 
             time_stamp = self.format_time(sub['start'])  
+            
+            # Handle multi-line subtitle text
             subtitle_text = sub['text'].strip()
-
-            # Debugging to confirm values
-            #print(f"[DEBUG] cap_number: {cap_number}, time_stamp: {time_stamp}, subtitle_text: {subtitle_text}")
-
-            # Create multi-column list entry
-            item = [
-                MultiContentEntryText(pos=(10, 5), size=(80, 30), font=0, text=cap_number, flags=RT_HALIGN_LEFT),  # Caption number
-                MultiContentEntryText(pos=(80, 5), size=(200, 30), font=0, text=time_stamp, flags=RT_HALIGN_LEFT),  # Timestamp
-                MultiContentEntryText(pos=(300, 5), size=(600, 30), font=0, text=subtitle_text, flags=RT_HALIGN_LEFT)  # Subtitle text
-            ]
-
-            # Debug to check if item is created correctly
-            #print(f"[DEBUG] Adding to menuItems: {item}")
+            
+            # If text contains newlines, split and process each line
+            if '\n' in subtitle_text:
+                lines = subtitle_text.split('\n')
+                # Create a multi-line entry
+                item = [
+                    MultiContentEntryText(pos=(10, 5), size=(80, 30), font=0, text=cap_number, flags=RT_HALIGN_LEFT),
+                    MultiContentEntryText(pos=(80, 5), size=(200, 30), font=0, text=time_stamp, flags=RT_HALIGN_LEFT),
+                    MultiContentEntryText(pos=(300, 5), size=(600, 60), font=0, text="\n".join(lines), flags=RT_HALIGN_LEFT)
+                ]
+                # Increase item height for multi-line content
+                self["subList"].l.setItemHeight(60)
+            else:
+                # Single line entry
+                item = [
+                    MultiContentEntryText(pos=(10, 5), size=(80, 30), font=0, text=cap_number, flags=RT_HALIGN_LEFT),
+                    MultiContentEntryText(pos=(80, 5), size=(200, 30), font=0, text=time_stamp, flags=RT_HALIGN_LEFT),
+                    MultiContentEntryText(pos=(300, 5), size=(600, 30), font=0, text=subtitle_text, flags=RT_HALIGN_LEFT)
+                ]
+                # Reset to default height for single line
+                self["subList"].l.setItemHeight(40)
 
             menuItems.append(item)
 
-        # Debug before setting the list
-        #print(f"[DEBUG] Final menuItems list: {menuItems}")
-
-        self["subList"].l.setList(menuItems)  # Set the list with separate columns
-        self["subList"].l.invalidate()  # Refresh UI
+        self["subList"].l.setList(menuItems)
+        self["subList"].l.invalidate()
 
     
     def setInitialSelection(self):
@@ -610,15 +638,22 @@ class SubsEngineDVB(object):
         
     def getSubtitlesList(self):
         """Returns a list of available subtitles with timestamps."""
-        return [
-        {
-            "index": idx,
-            "text": sub["text"],
-            "start": sub["start"] / 90000,  # 90,000 ticks per second
-            "end": sub["end"] / 90000,
-        }
-        for idx, sub in enumerate(self.subsList)
-        ]
+        result = []
+        for idx, sub in enumerate(self.subsList):
+            # Check if the subtitle has rows (multi-line) or just text
+            if 'rows' in sub:
+                # Combine all rows into a single string with newlines
+                text = '\n'.join([row['text'] for row in sub['rows']])
+            else:
+                text = sub.get('text', '')
+                
+            result.append({
+                "index": idx,
+                "text": text,
+                "start": sub["start"] / 90000,  # 90,000 ticks per second
+                "end": sub["end"] / 90000,
+            })
+        return result
 
 
     def setSubsList(self, subsList):
@@ -688,7 +723,17 @@ class SubsEngineDVB(object):
     def renderSub(self):
         for f in self.onRenderSub:
             f(self.subsList[self.position])
-        self.renderer.setSubtitle(self.subsList[self.position])
+        
+        # Check if the subtitle has rows (multi-line) or just text
+        if 'rows' in self.subsList[self.position]:
+            # For multi-line subtitles, we need to combine them
+            combined_text = '\n'.join([row['text'] for row in self.subsList[self.position]['rows']])
+            # Create a temporary subtitle dict with combined text
+            temp_sub = self.subsList[self.position].copy()
+            temp_sub['text'] = combined_text
+            self.renderer.setSubtitle(temp_sub)
+        else:
+            self.renderer.setSubtitle(self.subsList[self.position])
 
     def hideSub(self):
         for f in self.onHideSub:
