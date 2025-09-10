@@ -1,2 +1,2 @@
-version='1.7.0.28'
-description=' 1- Add support for NewVirtualKeyBoard plugin , Thanks fairbird .'
+version='1.7.0.29'
+description=' 1- Now you can search subtitles for VOD directly /n 2- fix some code errors .'
