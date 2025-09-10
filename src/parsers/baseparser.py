@@ -44,46 +44,61 @@ class BaseParser(object):
         return self.__class__.__name__
 
     def createSub(self, text, start, end):
-        """
-        @param text: text of subtitle
-        @param start: start time of subtitle in ms
-        @param end: end time of subtitle in ms
-
-        """
         duration = int(end - start)
-        # convert to pts
         start = int(start * 90)
         end = int(end * 90)
         if self.rowParse:
             rows = []
             style = newStyle = 'regular'
             color = newColor = 'default'
-            for rowText in text.split('\n'):
-                rowStyle, newStyle = self.getStyle(rowText, newStyle)
-                rowColor, newColor = self.getColor(rowText, newColor)
-                rowText = self.removeTags(rowText)
-                rows.append({"text": rowText, "style": rowStyle, 'color': rowColor})
+            
+            # Split text by lines but preserve formatting for each line
+            lines = text.split('\n')
+            for line in lines:
+                if line.strip():  # Only process non-empty lines
+                    rowStyle, newStyle = self.getStyle(line, newStyle)
+                    rowColor, newColor = self.getColor(line, newColor)
+                    rowText = self.removeTags(line)
+                    # Apply RTL line by line
+                    rowText = self._apply_rtl(rowText)
+                    rows.append({"text": rowText, "style": rowStyle, 'color': rowColor})
             return {'rows': rows, 'start': start, 'end': end, 'duration': duration}
         else:
             style, newStyle = self.getStyle(text)
             color, newColor = self.getColor(text)
             text = self.removeTags(text)
+            text = self._apply_rtl(text)
             return {'text': text, 'style': style, 'color': color, 'start': start, 'end': end, 'duration': duration}
 
     def parse(self, text, fps=None):
-        """
-        parses subtitles from text into list of sub dicts
-        and returns this list
+        # Ensure text is str (not bytes)
+        if isinstance(text, bytes):
+            try:
+                text = text.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                text = text.decode("cp1256", errors="ignore")
 
-        """
+        # Clean BOM if still present
+        if text.startswith(u"\ufeff"):
+            text = text[1:]
+
         text = text.strip()
-        
         text = text.replace('\x00', '').replace('.', '')
-        text = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]','',text)
+        text = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', text)
+
         sublist = self._parse(text, fps)
         if len(sublist) <= 1:
             raise NoSubtitlesParseError()
         return sublist
+
+    # 🔹 NEW FUNCTION
+    def _apply_rtl(self, text):
+        # If contains Arabic characters, wrap with RTL markers
+        if re.search(r'[\u0600-\u06FF]', text):
+            return u"\u202B" + text + u"\u202C"
+        return text
+
+
 
     def getColor(self, text, color=None):
         color, newColor = self._getColor(text, color)
