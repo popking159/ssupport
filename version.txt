@@ -1,2 +1,2 @@
 version='1.7.0.29'
-description=' 1- Now you can search subtitles for VOD directly /n 2- fix some code errors .'
+description=' 1- Now you can search subtitles for VOD directly /n 2- Fix some code errors /n 3- In Subtitle line picker , Add CH+ to reach 1st line and CH- to reach last line /n 4- Add version in the title of subssupport settings screen.'
