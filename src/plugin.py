@@ -11,17 +11,23 @@ from Screens.Console import Console
 import six
 import logging
 import os
-import json
+import json, re
+from datetime import datetime
 from Tools.Directories import fileExists
-
+from .Tmdb_scraper import scrape_tmdb_movies, scrape_movie_details
+from Components.MenuList import MenuList
+from Components.Label import Label
 from .e2_utils import isFullHD
 from .subtitles import E2SubsSeeker, SubsSearch, initGeneralSettings, initSubsSettings, \
     SubsSetupGeneral, SubsSearchSettings, SubsSetupExternal, SubsSetupEmbedded
 from .subtitlesdvb import SubsSupportDVB, SubsSetupDVBPlayer
+from .subtitles import TMDBScraperScreen
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-VER = "1.7.0.29"
+VER = "1.8.0.01"
 log = logging.getLogger("SubsSupport")
-
 
 def openSubtitlesSearch(session, **kwargs):
     settings = initSubsSettings().search
@@ -57,7 +63,6 @@ def openSubtitlesPlayer(session, **kwargs):
 def openSubsSupportSettings(session, **kwargs):
     settings = initSubsSettings()
     session.open(SubsSupportSettings, settings, settings.search, settings.external, settings.embedded, config.plugins.subsSupport.dvb)
-
 
 class SubsSupportSettings(Screen):
     if isFullHD():
@@ -345,4 +350,4 @@ def Plugins(**kwargs):
         PluginDescriptor(name=_('SubsSupport settings'), where=PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=openSubsSupportSettings),
         PluginDescriptor(name=_('SubsSupport downloader'), where=PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=openSubtitlesSearch),
         PluginDescriptor(name=_('SubsSupport DVB player'), where=PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=openSubtitlesPlayer)
-           ]
+    ]

@@ -1,34 +1,37 @@
 # -*- coding: UTF-8 -*-
-#################################################################################
-#
-#    SubsSupport 1.2.0 for Enigma2
-#    Coded by mx3L (c) 2014
-#
-#    This program is free software; you can redistribute it and/or
-#    modify it under the terms of the GNU General Public License
-#    as published by the Free Software Foundation; either version 2
-#    of the License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#################################################################################
-
 from __future__ import absolute_import
 from __future__ import print_function
-from datetime import datetime
+
+# Standard library imports
 import json
 import os
 import re
 import sys
-from threading import Thread
+import threading
+import shutil
+import time
 import traceback
-from Components.ScrollLabel import ScrollLabel
+from datetime import datetime
+from threading import Thread
+from xml.etree.ElementTree import parse as parse_xml
+
+# Third-party imports
+import requests
+import six
+from six.moves.queue import Queue
+from six.moves import range
+from six.moves import urllib
+from six.moves.urllib.parse import quote
 from twisted.internet.defer import Deferred
 from twisted.web import client
-from Screens.Console import Console
+
+# Enigma2 components
+from enigma import (
+    eSize, ePoint, gPixmapPtr, eListboxPythonMultiContent, getDesktop,
+    eServiceCenter, eServiceReference, iPlayableService, gFont, gRGB,
+    loadPNG, eLabel, eEnv, eTimer, eConsoleAppContainer, ePythonMessagePump,
+    RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, RT_WRAP, BT_SCALE
+)
 from Components.ActionMap import ActionMap, HelpableActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.GUIComponent import GUIComponent
@@ -36,60 +39,56 @@ from Components.Harddisk import harddiskmanager
 from Components.Label import Label
 from Components.Language import language
 from Components.MenuList import MenuList
-from Components.MultiContent import MultiContentEntryText, \
-    MultiContentEntryPixmapAlphaTest
+from Components.MultiContent import MultiContentEntryText, MultiContentEntryPixmapAlphaTest
+from Components.Pixmap import Pixmap
+from Components.ScrollLabel import ScrollLabel
 from Components.ServiceEventTracker import ServiceEventTracker
 from Components.Sources.Boolean import Boolean
 from Components.Sources.List import List
 from Components.Sources.StaticText import StaticText
-from Components.config import ConfigPassword
-from Components.config import ConfigSubsection, ConfigSelection, ConfigYesNo, \
-    configfile, getConfigListEntry, config, ConfigText, ConfigDirectory, ConfigOnOff, \
-    ConfigNothing, ConfigInteger, NoSave, KEY_DELETE, KEY_BACKSPACE, \
+from Components.config import (
+    ConfigPassword, ConfigSubsection, ConfigSelection, ConfigYesNo,
+    configfile, getConfigListEntry, config, ConfigText, ConfigDirectory, ConfigOnOff,
+    ConfigNothing, ConfigInteger, NoSave, KEY_DELETE, KEY_BACKSPACE,
     KEY_TIMEOUT, KEY_ASCII
+)
+from Screens.AudioSelection import QuickSubtitlesConfigMenu
 from Screens.ChoiceBox import ChoiceBox
+from Screens.Console import Console
 from Screens.HelpMenu import HelpableScreen
 from Screens.InfoBarGenerics import InfoBarSeek, InfoBarNotifications
 from Screens.LocationBox import LocationBox
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
 from Tools import Notifications
-from Tools.Directories import SCOPE_CURRENT_SKIN, SCOPE_SKIN, resolveFilename, \
-    fileExists, SCOPE_PLUGINS
+from Tools.Directories import (
+    SCOPE_CURRENT_SKIN, SCOPE_SKIN, resolveFilename, fileExists, SCOPE_PLUGINS
+)
 from Tools.ISO639 import LanguageCodes
 from Tools.LoadPixmap import LoadPixmap
+from skin import parseColor, parsePosition, parseFont
 
+# Local application imports
+from . import _, __author__, __version__, __email__
 from .compat import eConnectCallback, FileList
-from .e2_utils import messageCB, E2SettingsProvider, MyLanguageSelection, unrar, \
-    ConfigFinalText, Captcha, DelayMessageBox, MyConfigList, getFps, fps_float, \
-    getFonts, BaseMenuScreen, isFullHD, isHD, getDesktopSize
-from enigma import eTimer, eConsoleAppContainer, ePythonMessagePump, eSize, ePoint, RT_HALIGN_LEFT, \
-    RT_HALIGN_RIGHT, RT_VALIGN_CENTER, eListboxPythonMultiContent, \
-    getDesktop, eServiceCenter, eServiceReference, \
-    iPlayableService, gFont, \
-    gRGB, loadPNG, eLabel, eEnv
+from .e2_utils import (
+    messageCB, E2SettingsProvider, MyLanguageSelection, unrar, ConfigFinalText,
+    Captcha, DelayMessageBox, MyConfigList, getFps, fps_float, getFonts,
+    BaseMenuScreen, isFullHD, isHD, getDesktopSize
+)
 from .parsers import SubRipParser, MicroDVDParser
-from .process import SubsLoader, DecodeError, ParseError, ParserNotFoundError, \
-    LoadError
+from .process import SubsLoader, DecodeError, ParseError, ParserNotFoundError, LoadError
 from .searchsubs import Messages
 from .seek import SubsSeeker, SubtitlesDownloadError, SubtitlesErrors
 from .seekers.utilities import detectSearchParams, languageTranslate
-from skin import parseColor, parsePosition, parseFont
 from .utils import toString, SimpleLogger, toUnicode
+from .Tmdb_scraper import scrape_tmdb_movies, scrape_movie_details
 
-from . import _, __author__, __version__, __email__
-
-import six
-from six.moves.queue import Queue
-from six.moves import range
-from six.moves import urllib
-from six.moves.urllib.parse import quote
-
+# Conditional imports
 try:
     from xml.etree.cElementTree import parse as parse_xml
 except ImportError:
-    from xml.etree.ElementTree import parse as parse_xml
-
+    pass
 
 try:
     from Screens.AudioSelection import QuickSubtitlesConfigMenu
@@ -98,9 +97,6 @@ except ImportError:
 
 if six.PY3:
     long = int
-
-
-# localization function
 
 def warningMessage(session, text):
     session.open(MessageBox, text, type=MessageBox.TYPE_WARNING, timeout=5)
@@ -114,23 +110,10 @@ def debug(text, *args):
             text = text % (args)
         print("[SubsSupport]", toString('utf-8'))
 
-
-# set the name of plugin in which this library belongs
-# PLUGIN_NAME = 'mediaplayer2'
-
-# set debug mode
 DEBUG = False
 
-# set supported encodings, you have to make sure, that you have corresponding python
-# libraries in %PYTHON_PATH%/encodings/ (ie. iso-8859-2 requires iso_8859_2.searchsubs library)
-
-# to choose encodings for region you want, visit:
-# http://docs.python.org/release/2.4.4/lib/standard-encodings.html
-
-# Common encodings for all languages
 ALL_LANGUAGES_ENCODINGS = ['utf-8', 'utf-16']
 
-# other encodings, sorted according usage
 CENTRAL_EASTERN_EUROPE_ENCODINGS = ['utf-8', 'windows-1250', 'iso-8859-2', 'maclatin2', 'IBM852']
 WESTERN_EUROPE_ENCODINGS = ['windows-1252', 'iso-8859-15', 'macroman', 'ibm1140', 'IBM850']
 RUSSIAN_ENCODINGS = ['windows-1251', 'cyrillic', 'maccyrillic', 'koi8_r', 'IBM866']
@@ -147,7 +130,6 @@ ENCODINGS = {("Central and Eastern Europe"): CENTRAL_EASTERN_EUROPE_ENCODINGS,
             ("Greek"): GREEK_ENCODINGS,
             ("Hebrew"): HEBREW_ENCODINGS}
 
-# initializing parsers
 PARSERS = [SubRipParser, MicroDVDParser]
 
 
@@ -246,6 +228,7 @@ def initGeneralSettings(configsubsection):
     configsubsection.pauseVideoOnSubtitlesMenu = ConfigYesNo(default=True)
     configsubsection.encodingsGroup = ConfigSelection(default="Arabic", choices=[(e, _(e)) for e in ENCODINGS.keys()])
     configsubsection.settingsBackupPath = ConfigDirectory(default="/etc/enigma2/subssupport")
+    configsubsection.settingsTMDBDataPath = ConfigDirectory(default="/etc/enigma2/subssupport")
     return configsubsection
 
 
@@ -522,8 +505,6 @@ class SubsSupportStatus(object):
             iPlayableService.evStart: self.__serviceChanged,
             iPlayableService.evEnd: self.__serviceChanged,
         })
-        # DODANO: useSubclassKeymap ARGUMENT KAKO BI IZBJEGAO SUBSUPPORT KEYMAP U FNCPLAYERU, AKO JE SUBSUPPORT SUBCLASS, STO JE SLUCAJ U FNCPLAYER-U, ALI I MEDIAPLAYERU2
-        # NO OVO NECE UTJECATI NA MEDAPLAYER2 I OSTALE JER JE DEFAULT VALUE ARGUMENTA TRUE, TJ. AKO SE NE POZOVE U TIM PLUGINOVIMA SVE OSTAJE ISTO
         if useSubclassKeymap:
             self["SubsStatusActions"] = HelpableActionMap(self, "SubtitlesActions",
             {
@@ -787,8 +768,6 @@ class SubsSupport(SubsSupportEmbedded):
                 iPlayableService.evSeekableStatusChanged: self.__seekableStatusChanged,
             })
 
-            # DODANO: useSubclassKeymap ARGUMENT KAKO BI IZBJEGAO SUBSUPPORT KEYMAP U FNCPLAYERU, AKO JE SUBSUPPORT SUBCLASS, STO JE SLUCAJ U FNCPLAYER-U, ALI I MEDIAPLAYERU2
-            # NO OVO NECE UTJECATI NA MEDAPLAYER2 I OSTALE JER JE DEFAULT VALUE ARGUMENTA TRUE, TJ. AKO SE NE POZOVE U TIM PLUGINOVIMA SVE OSTAJE ISTO
             if useSubclassKeymap:
                 self["SubsActions"] = HelpableActionMap(self, "SubtitlesActions",
                     {
@@ -971,20 +950,15 @@ class SubsSupport(SubsSupportEmbedded):
         @param newSubsSCreen: recreates subtitles screen
         @param newService: set to True if new servicereference is in use
         """
-        # start trying encodings from beginning of encodings_group list
         if resetEnc:
             self.__subsEnc = None
         self.__subsLoader.change_encodings(ALL_LANGUAGES_ENCODINGS + ENCODINGS[self.subsSettings.encodingsGroup.getValue()])
         self.__subsEngine.pause()
-        # stop subtitles, clean active subtitle,  subtitles list, reset delay
-        # if new service -> remove service
         if resetEngine:
             self.__subsEngine.setSubsDelay(0)
             self.__subsEngine.reset()
             if newService:
                 self.__firstStart = False
-        # hide subtitles, reload screen with new settings
-        # if  newSubsScreen, remove current subscreen and create new one
         self.__resetSubsScreen(newSubsScreen)
         self.__subsPath = None
         self.__loaded = False
@@ -1011,8 +985,7 @@ class SubsSupport(SubsSupportEmbedded):
         if self.__subsScreen:
             self.session.deleteDialog(self.__subsScreen)
             self.__subsScreen = None
-        
-        # DODANO (DEAULT = BEZ TRY). NO PUKNE THIRD-PARTY PLUGIN KAD SE POZOVE OVA FUNKCIJA
+
         try:
             self.__starTimer.stop()
             del self.__startTimer_conn
@@ -1102,13 +1075,8 @@ class SubsSupport(SubsSupportEmbedded):
                 warningMessage(self.session, _("Cannot decode subtitles. Try another encoding group"))
             return None, None
         except ParserNotFoundError:
-            # if showMessages:
-                # warningMessage(self.session, _("Cannot parse subtitles. Not supported subtitles format"))
             return None, None
         except ParseError:
-            #FOR NOW REMOVE ERROR MSG
-            # if showMessages:
-                # warningMessage(self.session, _("Cannot parse subtitles. Invalid subtitles format"))
             return None, None
         finally:
             self.__firstStart = False
@@ -1143,10 +1111,6 @@ class SubsSupport(SubsSupportEmbedded):
         else:
             fnc()
 
-
-############ Methods triggered by videoEvents when SubsSupport is subclass of Screen ################
-
-
     def __serviceStarted(self):
         print('[SubsSupport] Service Started')
 
@@ -1178,8 +1142,6 @@ class SubsSupport(SubsSupportEmbedded):
         elif self.seekstate == self.SEEK_STATE_EOF:
             self.resetSubs(True)
 
-########### Methods which extends InfobarSeek seek methods
-
     def doSeekRelative(self, pts):
         if self.__loaded:
             # self.__subsEngine.preSeek(pts)
@@ -1194,8 +1156,6 @@ class SubsSupport(SubsSupportEmbedded):
             self.playAfterSeek()
         else:
             super(SubsSupport, self).doSeek(pts)
-
-############################################################
 
 
 class SubsEmbeddedScreen(Screen):
@@ -1330,7 +1290,6 @@ class SubtitlesWidget(GUIComponent):
                 self.instance2.setText(text)
                 self.instance2.show()
                 
-                # Ensure the fixed background maintains the correct height
                 bs = self.boundSize = (self.desktopSize[0], self.calcWidgetHeight())
                 self.instance.resize(eSize(int(bs[0]), int(bs[1])))
                 self.instance.move(ePoint(int(self.desktopSize[0] / 2 - bs[0] / 2), int(self.calcWidgetYPosition())))
@@ -1692,7 +1651,6 @@ class SubsEngine(object):
             if not self.renderer.subShown:
                 print('[SubsEngine] setDelayToNextSubtitle - next pos: %d of %d' % (self.position, len(self.subsList)))
                 toSub = self.subsList[self.position]
-                # position is incremented right after subtitle is hidden so we don't do anything
             elif self.renderer.subShown and self.position != len(self.subsList) - 1:
                 print('[SubsEngine] setDelayToNextSubtitle - next pos: %d of %d' % (self.position + 1, len(self.subsList)))
                 toSub = self.subsList[self.position + 1]
@@ -1709,7 +1667,6 @@ class SubsEngine(object):
         def setDelay():
             if not self.renderer.subShown:
                 print('[SubsEngine] setDelayToPrevSubtitle - skipping to start of current sub')
-                # position is incremented right after subtitle is hidden so we have to go one back
                 toSub = self.subsList[self.position - 1]
             elif self.renderer.subShown and self.position != 0:
                 print('[SubsEngine] setDelayToPrevSubtitle - prev pos: %d of %d' % (self.position - 1, len(self.subsList)))
@@ -1897,8 +1854,6 @@ def PanelListEntry(name, mode):
         y=35
     else:
         y=25
-    # res.append(MultiContentEntryText(pos=(5, 5), size=(330, y), font=0, flags=RT_VALIGN_CENTER, text=name))
-    # DODANO
     res.append(MultiContentEntryText(pos=(5, 5), size=(430, y), font=0, flags=RT_VALIGN_CENTER, text=name))
 
     return res
@@ -1957,7 +1912,6 @@ class SubsMenu(Screen):
         self["subfile_list"] = PanelList([], 32)
         self["menu_list"] = PanelList([], 35)
         self["copyright"] = Label("")
-        # self["copyright"] = Label("created by %s <%s>"%(__author__,__email__))
         self["actions"] = ActionMap(["SetupActions"],
             {
                 "ok": self.ok,
@@ -2016,12 +1970,9 @@ class SubsMenu(Screen):
 
             if self.newSelection:
                 pass
-                # subInfo.append(PanelColorListEntry(_("State:"),_("not loaded"), 0xDAA520, 0xffff00, 300))
             elif self.encoding and not self.newSelection:
-                # subInfo.append(PanelColorListEntry(_("State:"),_("loaded"), 0xDAA520, 0x00ff00, 300))
                 subInfo.append(PanelColorListEntry(_("Encoding:"), self.encoding, 0xDAA520, 0xffffff, 150))
             elif not self.encoding and not self.newSelection:
-                # subInfo.append(PanelColorListEntry(_("State:"),_("not loaded"), 0xDAA520, 0xffff00, 300))
                 subInfo.append(PanelColorListEntry(_("Encoding:"), _("cannot decode"), 0xDAA520, 0xffffff, 150))
         else:
             self["subfile_label"].setText(_("None"))
@@ -2259,6 +2210,7 @@ class SubsSetupMainMisc(BaseMenuScreen):
         configList.extend(SubsSetupExternal.getConfigList(self.subsSettings.external))
         configList.append(getConfigListEntry(_("Encoding"), self.subsSettings.encodingsGroup))
         configList.append(getConfigListEntry(_("Settings Backup Path"), self.subsSettings.settingsBackupPath))
+        configList.append(getConfigListEntry(_("Settings TMDB data Path"), self.subsSettings.settingsTMDBDataPath))
         configList.append(getConfigListEntry(_("Show expert settings"), self.showExpertSettings))
         if self.showExpertSettings.value:
             engineSettings = self.subsSettings.engine
@@ -2361,6 +2313,7 @@ class SubsSetupGeneral(BaseMenuScreen):
             getConfigListEntry(_("Pause video on opening subtitles menu"), self.generalSettings.pauseVideoOnSubtitlesMenu),
             getConfigListEntry(_("Encoding"), self.generalSettings.encodingsGroup),
             getConfigListEntry(_("Settings Backup Path"), self.generalSettings.settingsBackupPath),
+            getConfigListEntry(_("Settings TMDB data Path"), self.generalSettings.settingsTMDBDataPath),
         ])
 
     def keyOk(self):
@@ -2368,10 +2321,16 @@ class SubsSetupGeneral(BaseMenuScreen):
         if current == self.generalSettings.settingsBackupPath:
             currentPath = self.generalSettings.settingsBackupPath.value
             self.session.openWithCallback(self.setSettingsBackupPath, LocationBox, "", "", currentPath)
-    
+        if current == self.generalSettings.settingsTMDBDataPath:
+            currentPath = self.generalSettings.settingsTMDBDataPath.value
+            self.session.openWithCallback(self.setsettingsTMDBDataPath, LocationBox, "", "", currentPath)    
     def setSettingsBackupPath(self, settingsBackupPath=None):
         if settingsBackupPath:
             self.generalSettings.settingsBackupPath.value = settingsBackupPath
+            self.buildMenu()
+    def setsettingsTMDBDataPath(self, settingsTMDBDataPath=None):
+        if settingsTMDBDataPath:
+            self.generalSettings.settingsTMDBDataPath.value = settingsTMDBDataPath
             self.buildMenu()
 
 def FileEntryComponent(name, absolute=None, isDir=False):
@@ -2391,11 +2350,6 @@ def FileEntryComponent(name, absolute=None, isDir=False):
             res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHATEST, 10, 2, 20, 20, png))
     return res
 
-
-# TODO rework so there is one general SubtitlesChooser, where we can quickly
-# switch between different views(search, embedded, external, history..), i.e
-# we can go directly from search screen -> embedded screen (if embedded subtitles are available)
-
 class SubFileList(FileList):
     def __init__(self, defaultDir):
         extensions = []
@@ -2403,18 +2357,14 @@ class SubFileList(FileList):
             extensions += list(parser.parsing)
         FileList.__init__(self, defaultDir, matchingPattern="(?i)^.*\." + '(' + '|'.join(ext[1:] for ext in extensions) + ')', useServiceRef=False)
         self.l.setFont(0, gFont("Regular", 18))
-        #self.l.setFont(1, gFont("Regular", 27))
         self.l.setFont(1, gFont("Regular", 29))
         if isFullHD():
-            #self.l.setItemHeight(35)
             self.l.setItemHeight(48)                   #DODANO
         else:
             self.l.setItemHeight(23)
 
     def changeDir(self, directory, select=None):
         self.list = []
-
-        # if we are just entering from the list of mount points:
         if self.current_directory is None:
             if directory and self.showMountpoints:
                 self.current_mountpoint = self.getMountpointLink(directory)
@@ -2435,7 +2385,6 @@ class SubFileList(FileList):
             files = []
             directories = []
         elif self.useServiceRef:
-            # we should not use the 'eServiceReference(string)' constructor, because it doesn't allow ':' in the directoryname
             root = eServiceReference(2, 0, directory)
             if self.additional_extensions:
                 root.setName(self.additional_extensions)
@@ -2529,9 +2478,670 @@ class SubsChooserMenuList(MenuList):
             res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(35, 25), png=loadPNG(os.path.join(os.path.dirname(__file__), 'img', 'key_blue.png'))))
             res.append(MultiContentEntryText(pos=(60, 5), size=(350, 25), font=0, flags=RT_VALIGN_CENTER, text=_("Choose from web subtitles")))
             menulist.append(res)
+            # Add TMDB option
+            res = [('tmdb')]
+            res.append(MultiContentEntryPixmapAlphaTest(pos=(5, 5), size=(35, 25), png=loadPNG(os.path.join(os.path.dirname(__file__), 'img', 'key_green.png'))))
+            res.append(MultiContentEntryText(pos=(60, 5), size=(350, 25), font=0, flags=RT_VALIGN_CENTER, text=_("Search on TMDB")))
+            menulist.append(res)
         if embeddedAvailable or historySupport or searchSupport:
             self.l.setList(menulist)
 
+class TMDBScraperScreen(Screen):
+    if isFullHD():
+        skin = """
+            <screen position="center,center" size="1050,670" title="TMDB Scraper">
+      <widget name="error_message" position="10,220" size="1030,90" font="Regular;28" foregroundColor="#f5516d" halign="center" valign="center" />
+      <widget source="list" render="Listbox" position="10,10" size="1030,600" scrollbarMode="showOnDemand" transparent="1">
+       <convert type="TemplatedMultiContent">
+                        {"templates":
+                            {"default": (150, [
+MultiContentEntryPixmapAlphaBlend(pos = (5, 5), size = (96, 140), png = 0, flags=BT_SCALE),
+MultiContentEntryText(pos = (120, 10), size = (600, 40), font = 0, flags = RT_HALIGN_LEFT, text = 1),
+MultiContentEntryText(pos = (120, 50), size = (600, 30), font = 1, flags = RT_HALIGN_LEFT, text = 2),
+MultiContentEntryText(pos = (120, 90), size = (850, 50), font = 2, flags = RT_HALIGN_LEFT|RT_WRAP, text = 3),
+                            ], True, "showOnDemand"),
+                            },
+                        "fonts": [gFont("Regular", 28), gFont("Regular", 24), gFont("Regular", 20)],
+                        "itemHeight": 150
+                        }
+        </convert>
+       </widget>
+       <widget name="key_red" position="10,620" size="250,40" valign="center" halign="center" zPosition="2" font="Regular;26" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+       <widget name="key_green" position="270,620" size="250,40" valign="center" halign="center" zPosition="2" font="Regular;26" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+       <widget name="key_yellow" position="530,620" size="250,40" valign="center" halign="center" zPosition="2" font="Regular;26" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+       <widget name="key_blue" position="790,620" size="250,40" valign="center" halign="center" zPosition="2" font="Regular;26" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+       <eLabel name="" position="10,652" size="250,8" backgroundColor="#f5516d" zPosition="3" />
+       <eLabel name="" position="270,652" size="250,8" backgroundColor="#92ef80" zPosition="3" />
+       <eLabel name="" position="530,652" size="250,8" backgroundColor="#ffd65c" zPosition="3" />
+       <eLabel name="" position="790,652" size="250,8" backgroundColor="#47c8ff" zPosition="3" />
+</screen>
+            """
+    else:
+        skin = """
+            <screen position="center,center" size="800,400" title="TMDB Scraper">
+                <widget source="list" render="Listbox" position="10,10" size="780,300" scrollbarMode="showOnDemand" transparent="1">
+                    <convert type="TemplatedMultiContent">
+                        {"templates":
+                            {"default": (100, [
+                                MultiContentEntryPixmapAlphaBlend(pos = (5, 5), size = (70, 105), png = 0, flags=BT_SCALE),
+                                MultiContentEntryText(pos = (85, 10), size = (500, 30), font = 0, flags = RT_HALIGN_LEFT, text = 1),
+                                MultiContentEntryText(pos = (85, 45), size = (500, 25), font = 1, flags = RT_HALIGN_LEFT, text = 2),
+                                MultiContentEntryText(pos = (85, 75), size = (500, 20), font = 2, flags = RT_HALIGN_LEFT, text = 3),
+                            ], True, "showOnDemand"),
+                            },
+                        "fonts": [gFont("Regular", 22), gFont("Regular", 18), gFont("Regular", 16)],
+                        "itemHeight": 100
+                        }
+                    </convert>
+                </widget>
+                <ePixmap position="10,320" size="150,30" pixmap="skin_default/buttons/red.png" transparent="1" alphatest="on" />
+                <ePixmap position="160,320" size="150,30" pixmap="skin_default/buttons/green.png" transparent="1" alphatest="on" />
+                <ePixmap position="310,320" size="150,30" pixmap="skin_default/buttons/yellow.png" transparent="1" alphatest="on" />
+                <ePixmap position="460,320" size="150,30" pixmap="skin_default/buttons/blue.png" transparent="1" alphatest="on" />
+                <widget name="key_red" position="10,320" size="150,30" valign="center" halign="center" zPosition="2" font="Regular;18" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+                <widget name="key_green" position="160,320" size="150,30" valign="center" halign="center" zPosition="2" font="Regular;18" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+                <widget name="key_yellow" position="310,320" size="150,30" valign="center" halign="center" zPosition="2" font="Regular;18" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+                <widget name="key_blue" position="460,320" size="150,30" valign="center" halign="center" zPosition="2" font="Regular;18" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+            </screen>
+            """
+
+    def __init__(self, session, eventList, settings):
+        Screen.__init__(self, session)
+        self.eventList = eventList
+        self.settings = settings
+        self.movies = []
+        self.currentSearch = eventList[0] if eventList else ""
+        
+        # Access the TMDB path directly from the main config
+        from Components.config import config
+        TMDBbackup_path = config.plugins.subtitlesSupport.settingsTMDBDataPath.value
+        self.detailsPath = os.path.join(TMDBbackup_path, "details")
+        self.imagesPath = os.path.join(TMDBbackup_path, "images")
+        self.tmpPosterPath = "/var/volatile/tmp/subssupport_tmdb/"
+        self.backgroundTasksRunning = False
+        
+        # Create directories if they don't exist
+        for path in [self.detailsPath, self.imagesPath, self.tmpPosterPath]:
+            if not os.path.exists(path):
+                os.makedirs(path)
+        
+        self["list"] = List([])
+        self["key_red"] = Label(_("Close"))
+        self["key_green"] = Label(_("Select"))
+        self["key_yellow"] = Label(_("Details"))
+        self["key_blue"] = Label(_("Download Images"))
+        self["error_message"] = Label("")
+        self["error_message"].hide()        
+        self["actions"] = ActionMap(["OkCancelActions", "ColorActions"],
+        {
+            "ok": self.selectMovie,
+            "cancel": self.close,
+            "red": self.close,
+            "green": self.selectMovie,
+            "yellow": self.showDetails,
+            "blue": self.downloadImages,
+        })
+        
+        self.onLayoutFinish.append(self.startSearch)
+        
+        # Add a timer to prevent flickering
+        self.posterUpdateTimer = eTimer()
+        self.posterUpdateTimer.callback.append(self.updateMovieListDelayed)
+        self.posterUpdateTimerRunning = False
+        self.posterUpdateQueue = []
+
+    def startSearch(self):
+        if self.currentSearch:
+            self.searchTMDB()
+
+    def searchTMDB(self):
+        try:
+            # Clear existing posters before new search
+            self.clearPosters()
+            
+            self.movies = scrape_tmdb_movies(self.currentSearch)
+            self.updateMovieList()
+            
+            if not self.movies:
+                # Instead of opening a MessageBox, show the error in the label
+                self["error_message"].setText(_("No results found for: %s") % self.currentSearch)
+                self["error_message"].show()
+                
+        except Exception as e:
+            # Instead of opening a MessageBox, show the error in the label
+            error_msg = _("Error searching TMDB: %s") % str(e)
+            self["error_message"].setText(error_msg)
+            self["error_message"].show()
+            print(f"TMDB search error: {e}")
+
+    def updateMovieList(self):
+        self["error_message"].hide()
+        listItems = []
+        for idx, movie in enumerate(self.movies):
+            title = movie.get('title', 'Unknown Title')
+            release_date = movie.get('release_date', '')
+            
+            # Format the date if available
+            if release_date:
+                try:
+                    date_obj = datetime.strptime(release_date, "%Y-%m-%d")
+                    formatted_date = date_obj.strftime("%B %d, %Y")
+                except:
+                    formatted_date = release_date
+            else:
+                formatted_date = 'Unknown Date'
+            
+            # Get overview if available
+            overview = movie.get('overview', '')
+            if overview and len(overview) > 100:
+                overview = overview[:100] + "..."
+            
+            # Load poster image
+            poster_path = os.path.join(self.tmpPosterPath, f"poster_{idx}.jpg")
+            poster_pixmap = None
+            if os.path.exists(poster_path):
+                from Tools.LoadPixmap import LoadPixmap
+                try:
+                    poster_pixmap = LoadPixmap(poster_path)
+                except:
+                    poster_pixmap = None
+            
+            # Create list entry
+            listItems.append((poster_pixmap, title, formatted_date, overview))
+        
+        self["list"].setList(listItems)
+        
+        # Download all posters in background
+        if self.movies:
+            threading.Thread(target=self.downloadAllPosters).start()
+
+    def updateMovieListDelayed(self):
+        """Update the movie list with a delay to prevent flickering"""
+        if self.posterUpdateQueue:
+            idx = self.posterUpdateQueue.pop(0)
+            
+            # Update just the specific item in the list
+            current_list = self["list"].list
+            if idx < len(current_list):
+                poster_path = os.path.join(self.tmpPosterPath, f"poster_{idx}.jpg")
+                if os.path.exists(poster_path):
+                    from Tools.LoadPixmap import LoadPixmap
+                    try:
+                        poster_pixmap = LoadPixmap(poster_path)
+                        # Update just this item
+                        item = list(current_list[idx])
+                        item[0] = poster_pixmap
+                        current_list[idx] = tuple(item)
+                        self["list"].updateList(current_list)
+                    except:
+                        pass
+            
+            # Continue with next item if queue not empty
+            if self.posterUpdateQueue:
+                self.posterUpdateTimer.start(200, True)  # 200ms delay
+            else:
+                self.posterUpdateTimerRunning = False
+        else:
+            self.posterUpdateTimerRunning = False
+
+    def clearPosters(self):
+        """Clear all existing posters from the temp directory"""
+        try:
+            if os.path.exists(self.tmpPosterPath):
+                for file in os.listdir(self.tmpPosterPath):
+                    if file.startswith("poster_") and file.endswith(".jpg"):
+                        os.remove(os.path.join(self.tmpPosterPath, file))
+        except Exception as e:
+            print(f"Error clearing posters: {e}")
+
+    def downloadAllPosters(self):
+        """Download all posters for the current search results"""
+        for idx, movie in enumerate(self.movies):
+            poster_url = movie.get('poster_url')
+            if poster_url:
+                try:
+                    filename = f"poster_{idx}.jpg"
+                    filepath = os.path.join(self.tmpPosterPath, filename)
+                    
+                    # Download the poster (overwrite if exists)
+                    response = requests.get(poster_url, stream=True, verify=False, timeout=10)
+                    if response.status_code == 200:
+                        with open(filepath, 'wb') as out_file:
+                            shutil.copyfileobj(response.raw, out_file)
+                    
+                    # Add to update queue
+                    self.posterUpdateQueue.append(idx)
+                    
+                    # Start the timer if not running
+                    if not self.posterUpdateTimerRunning:
+                        self.posterUpdateTimerRunning = True
+                        self.posterUpdateTimer.start(200, True)
+                        
+                except Exception as e:
+                    print(f"Error downloading poster {idx}: {e}")
+
+    def get_movie_year(self, movie):
+        """Extract year from movie data"""
+        # Try to get year from release_date
+        release_date = movie.get('release_date', '')
+        if release_date:
+            year_match = re.search(r'(\d{4})', release_date)
+            if year_match:
+                return year_match.group(1)
+        
+        # Try to get year from the search result
+        release_date_orig = movie.get('release_date', '')
+        if release_date_orig:
+            year_match_orig = re.search(r'(\d{4})', release_date_orig)
+            if year_match_orig:
+                return year_match_orig.group(1)
+                
+        return 'unknown_year'
+
+    def selectMovie(self):
+        if self["list"].getCurrent():
+            idx = self["list"].getCurrentIndex()
+            if 0 <= idx < len(self.movies):
+                selected_movie = self.movies[idx]
+                
+                # Get year for filename
+                year = self.get_movie_year(selected_movie)
+                
+                # Check if we already have a JSON file for this movie
+                title = selected_movie.get('title', 'unknown').replace(' ', '_').replace('/', '_')
+                filename = f"tmdb_{title}_{year}_details.json"
+                filepath = os.path.join(self.detailsPath, filename)
+                
+                # Start background tasks and wait for them to complete
+                self.startBackgroundTasks(selected_movie, filepath, title, year)
+                
+                # Wait for background tasks to complete before proceeding
+                self.waitForBackgroundTasks()
+                
+                # Use the movie title and year for subtitle search
+                movie_title = selected_movie.get('title', '')
+                release_year = year if year != 'unknown_year' else ''
+                
+                if movie_title and release_year:
+                    search_title = f"{movie_title} {release_year}"
+                else:
+                    search_title = movie_title
+                    
+                if search_title:
+                    # Close the screen and return the search title
+                    self.close(search_title)
+                else:
+                    self.session.open(MessageBox, _("Could not determine search title."), MessageBox.TYPE_INFO)
+
+    def waitForBackgroundTasks(self):
+        """Wait for background tasks to complete with a timeout"""
+        timeout = 10  # seconds
+        start_time = time.time()
+        
+        while self.backgroundTasksRunning and (time.time() - start_time) < timeout:
+            time.sleep(0.1)  # Short sleep to avoid busy waiting
+        
+        if self.backgroundTasksRunning:
+            print("Warning: Background tasks timed out")
+
+    def startBackgroundTasks(self, selected_movie, filepath, title, year):
+        """Start background tasks for scraping details and downloading images"""
+        # Check if details and images already exist
+        details_exist = os.path.exists(filepath)
+        
+        # Check if images folder exists
+        images_folder = os.path.join(self.imagesPath, f"{title}_{year}")
+        images_exist = os.path.exists(images_folder) and any(
+            fname.endswith('.jpg') or fname.endswith('.png') 
+            for fname in os.listdir(images_folder)
+        )
+        
+        # Only show message if we're actually going to do work
+        if not details_exist or not images_exist:
+            self.session.open(MessageBox, _("Starting background tasks for details scraping and image download..."), 
+                             MessageBox.TYPE_INFO, timeout=3)
+        
+        self.backgroundTasksRunning = True
+        
+        # Start background thread for details scraping and image download
+        threading.Thread(target=self.backgroundTasksThread, 
+                        args=(selected_movie, filepath, title, year, details_exist, images_exist)).start()
+    
+    def backgroundTasksThread(self, selected_movie, filepath, title, year, details_exist, images_exist):
+        """Background thread for scraping details and downloading images"""
+        try:
+            # Set flag indicating tasks are running
+            self.backgroundTasksRunning = True
+            
+            # Your existing code here...
+            details = None
+            
+            # Only scrape details if they don't exist
+            if not details_exist:
+                # Fetch details and save to JSON file
+                details = scrape_movie_details(selected_movie['url'])
+                if details:
+                    # Merge basic and detailed info
+                    merged_info = {**selected_movie, **details}
+                    
+                    # Save to JSON file
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        json.dump(merged_info, f, indent=2, ensure_ascii=False)
+                else:
+                    print("Failed to scrape movie details")
+                    return
+            else:
+                # Load existing details
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    details = json.load(f)
+            
+            # Download images if they don't exist
+            if not images_exist and details:
+                # Extract year from details
+                release_year = self.get_movie_year(details)
+                if release_year == 'unknown_year':
+                    release_year = year
+                
+                if release_year != 'unknown_year':
+                    self.downloadImagesBackground(details, title, release_year)
+            
+        except Exception as e:
+            print(f"Error in background tasks: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        finally:
+            # Clear flag when tasks are complete
+            self.backgroundTasksRunning = False
+
+    def showDetails(self):
+        if self["list"].getCurrent():
+            idx = self["list"].getCurrentIndex()
+            if 0 <= idx < len(self.movies):
+                selected_movie = self.movies[idx]
+                
+                # Get year for filename
+                year = self.get_movie_year(selected_movie)
+                
+                # Check if we already have a JSON file for this movie
+                title = selected_movie.get('title', 'unknown').replace(' ', '_').replace('/', '_')
+                filename = f"tmdb_{title}_{year}_details.json"
+                filepath = os.path.join(self.detailsPath, filename)
+                
+                if os.path.exists(filepath):
+                    # Load from existing JSON file
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            details = json.load(f)
+                        self.displayDetails(details, filepath)
+                    except Exception as e:
+                        self.session.open(MessageBox, _("Error loading details: %s") % str(e), MessageBox.TYPE_ERROR)
+                else:
+                    # Get detailed information
+                    if 'url' in selected_movie:
+                        try:
+                            details = scrape_movie_details(selected_movie['url'])
+                            if details:
+                                # Save to JSON file
+                                with open(filepath, 'w', encoding='utf-8') as f:
+                                    json.dump(details, f, indent=2, ensure_ascii=False)
+                                self.displayDetails(details, filepath)
+                            else:
+                                self.session.open(MessageBox, _("Could not retrieve details for this movie."), MessageBox.TYPE_INFO)
+                        except Exception as e:
+                            self.session.open(MessageBox, _("Error retrieving details: %s") % str(e), MessageBox.TYPE_ERROR)
+                    else:
+                        self.session.open(MessageBox, _("No URL available for this movie."), MessageBox.TYPE_INFO)
+
+    def downloadImages(self):
+        if self["list"].getCurrent():
+            idx = self["list"].getCurrentIndex()
+            if 0 <= idx < len(self.movies):
+                selected_movie = self.movies[idx]
+                
+                # Get year for filename
+                year = self.get_movie_year(selected_movie)
+                
+                # Check if we already have a JSON file for this movie
+                title = selected_movie.get('title', 'unknown').replace(' ', '_').replace('/', '_')
+                filename = f"tmdb_{title}_{year}_details.json"
+                filepath = os.path.join(self.detailsPath, filename)
+                
+                if os.path.exists(filepath):
+                    # Load from existing JSON file
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            details = json.load(f)
+                        
+                        # Extract year using our method
+                        release_year = self.get_movie_year(details)
+                        
+                        if release_year != 'unknown_year':
+                            # Start image download in background
+                            self.session.open(MessageBox, _("Downloading images in background..."), MessageBox.TYPE_INFO, timeout=3)
+                            threading.Thread(target=self.downloadImagesBackground, args=(details, title, release_year)).start()
+                        else:
+                            self.session.open(MessageBox, _("Cannot determine year for image folder."), MessageBox.TYPE_INFO)
+                    except Exception as e:
+                        self.session.open(MessageBox, _("Error loading details: %s") % str(e), MessageBox.TYPE_ERROR)
+                else:
+                    self.session.open(MessageBox, _("No details available for this movie. Please view details first."), MessageBox.TYPE_INFO)
+
+    def downloadImagesBackground(self, details, title, release_year):
+        """Download images in the background without UI feedback"""
+        try:
+            # Use the instance's imagesPath
+            images_dir = self.imagesPath
+            
+            # Create folder for this movie
+            folder_name = f"{title}_{release_year}"
+            movie_folder = os.path.join(images_dir, folder_name)
+            if not os.path.exists(movie_folder):
+                os.makedirs(movie_folder)
+            
+            # Download poster
+            if details.get('additional_poster_urls'):
+                poster_url = details['additional_poster_urls'][0]
+                poster_path = os.path.join(movie_folder, "poster.jpg")
+                self.downloadImage(poster_url, poster_path)            
+            elif details.get('poster_url'):
+                poster_url = details['poster_url']
+                poster_path = os.path.join(movie_folder, "poster.jpg")
+                self.downloadImage(poster_url, poster_path)
+
+            
+            # Download logo
+            if details.get('logo_urls'):
+                logo_url = details['logo_urls'][0]
+                logo_path = os.path.join(movie_folder, "logo.png")
+                self.downloadImage(logo_url, logo_path)
+            
+            # Download backdrop
+            if details.get('backdrop_urls'):
+                backdrop_url = details['backdrop_urls'][0]
+                backdrop_path = os.path.join(movie_folder, "backdrop.jpg")
+                self.downloadImage(backdrop_url, backdrop_path)
+            
+            # Download cast images (limit to 4 to save time)
+            if details.get('cast'):
+                cast_folder = os.path.join(movie_folder, "cast")
+                if not os.path.exists(cast_folder):
+                    os.makedirs(cast_folder)
+                
+                for i, actor in enumerate(details['cast'][:4]):
+                    if actor.get('profile_url'):
+                        cast_path = os.path.join(cast_folder, f"cast_{i+1}.jpg")
+                        self.downloadImage(actor['profile_url'], cast_path)
+            
+            print(f"Background image download completed for {title}_{release_year}")
+            
+        except Exception as e:
+            print(f"Error downloading images in background: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def downloadImage(self, url, path):
+        """Download a single image"""
+        try:
+            response = requests.get(url, stream=True, verify=False, timeout=10)
+            if response.status_code == 200:
+                with open(path, 'wb') as out_file:
+                    shutil.copyfileobj(response.raw, out_file)
+        except Exception as e:
+            print(f"Error downloading image {url}: {e}")
+
+    def displayDetails(self, details, filepath):
+        # Extract year from details
+        release_year = self.get_movie_year(details)
+        if release_year == 'unknown_year':
+            release_year = details.get('release_date', '').split('-')[0] if details.get('release_date') else 'unknown'
+        
+        # Create folder name
+        title = details.get('title', 'unknown').replace(' ', '_').replace('/', '_')
+        folder_name = f"{title}_{release_year}"
+        images_folder = os.path.join(self.imagesPath, folder_name)
+        
+        # Open the details screen
+        self.session.open(MovieDetailsScreen, details, images_folder)
+
+class MovieDetailsScreen(Screen):
+    if isFullHD():
+        skin = """
+        <screen position="center,center" size="1200,750" title="Movie Details" zPosition="10">
+            <widget name="poster" position="952,86" size="220,330" zPosition="2" scale="1" />
+            <widget name="logo" position="983,26" size="150,50" zPosition="2" scale="1" />
+            <widget name="title" position="10,5" size="900,50" font="Regular;40" halign="left" />
+            <widget name="tagline" position="10,60" size="900,40" font="Regular;32" halign="left" />
+            <widget name="rating" position="10,110" size="500,40" font="Regular;34" halign="left" />
+            <widget name="runtime" position="10,160" size="500,40" font="Regular;34" halign="left" />
+            <widget name="adult" position="10,210" size="500,40" font="Regular;34" halign="left" />
+            <widget name="genres" position="10,260" size="800,40" font="Regular;34" halign="left" />
+            <widget name="overview" position="10,590" size="978,156" font="Regular; 30" halign="left" valign="top" />
+            <widget name="cast1" position="10,447" size="132,132" zPosition="2" />
+            <widget name="cast1_name" position="147,310" size="132,132" font="Regular;24" halign="center" />
+            <widget name="cast2" position="10,310" size="132,132" zPosition="2" />
+            <widget name="cast2_name" position="147,447" size="132,132" font="Regular;24" halign="center" />
+            <widget name="cast3" position="310,310" size="132,132" zPosition="2" />
+            <widget name="cast3_name" position="447,310" size="132,132" font="Regular;24" halign="center" />
+            <widget name="cast4" position="310,447" size="132,132" zPosition="2" />
+            <widget name="cast4_name" position="447,447" size="132,132" font="Regular;24" halign="center" />
+            <eLabel name="" position="1040,742" size="150,4" backgroundColor="#f5516d" zPosition="3" />
+            <widget source="key_red" render="Label" position="1040,706" size="150,40" font="Regular;30" halign="center" valign="center" />
+        </screen>
+        """
+    else:
+        skin = """
+        <screen position="center,center" size="800,600" title="Movie Details" zPosition="10">
+            <widget name="poster" position="580,80" size="200,300" zPosition="2" scale="1" />
+            <widget name="logo" position="630,30" size="100,40" zPosition="2" />
+            <widget name="title" position="10,5" size="560,40" font="Regular;28" halign="left" />
+            <widget name="tagline" position="10,50" size="560,30" font="Regular;22" halign="left" />
+            <widget name="rating" position="10,85" size="380,30" font="Regular;24" halign="left" />
+            <widget name="runtime" position="10,120" size="380,30" font="Regular;24" halign="left" />
+            <widget name="adult" position="10,155" size="380,30" font="Regular;24" halign="left" />
+            <widget name="genres" position="10,190" size="560,30" font="Regular;24" halign="left" />
+            <widget name="overview" position="10,230" size="560,150" font="Regular;22" halign="left" valign="top" />
+            <widget name="cast1" position="10,390" size="100,100" zPosition="2" scale="1" />
+            <widget name="cast1_name" position="10,500" size="100,70" font="Regular;18" halign="center" />
+            <widget name="cast2" position="120,390" size="100,100" zPosition="2" scale="1" />
+            <widget name="cast2_name" position="120,500" size="100,75" font="Regular;18" halign="center" />
+            <widget name="cast3" position="230,390" size="100,100" zPosition="2" scale="1" />
+            <widget name="cast3_name" position="230,500" size="100,75" font="Regular;18" halign="center" />
+            <widget name="cast4" position="340,390" size="100,100" zPosition="2" scale="1" />
+            <widget name="cast4_name" position="340,500" size="100,75" font="Regular;18" halign="center" />
+            <eLabel name="" position="694,582" size="100,4" backgroundColor="#f5516d" zPosition="3" />
+            <widget source="key_red" render="Label" position="694,554" size="100,30" font="Regular;22" halign="left" valign="center" />
+        </screen>
+        """
+
+    def __init__(self, session, details, images_folder):
+        Screen.__init__(self, session)
+        self.details = details
+        self.images_folder = images_folder
+        self["title"] = Label("")
+        self["tagline"] = Label("")
+        self["rating"] = Label("")
+        self["runtime"] = Label("")
+        self["adult"] = Label("")
+        self["genres"] = Label("")
+        self["overview"] = Label("")
+        self["poster"] = Pixmap()
+        self["logo"] = Pixmap()
+        self["cast1"] = Pixmap()
+        self["cast1_name"] = Label("")
+        self["cast2"] = Pixmap()
+        self["cast2_name"] = Label("")
+        self["cast3"] = Pixmap()
+        self["cast3_name"] = Label("")
+        self["cast4"] = Pixmap()
+        self["cast4_name"] = Label("")
+        self["key_red"] = StaticText(_("Close"))
+        self["actions"] = ActionMap(["OkCancelActions", "ColorActions"],
+        {
+            "ok": self.close,
+            "cancel": self.close,
+            "red": self.close,
+        })
+        self.onLayoutFinish.append(self.loadData)
+
+    def loadData(self):
+        # Set text information
+        self["title"].setText(self.details.get('title', 'N/A'))
+        
+        # Tagline
+        tagline = self.details.get('tagline', '')
+        self["tagline"].setText(tagline if tagline else _("No tagline available"))
+        
+        # Rating
+        rating = self.details.get('rating', 'N/A')
+        self["rating"].setText(_("Rating: ") + str(rating))
+        
+        # Runtime
+        runtime = self.details.get('runtime', 'N/A')
+        self["runtime"].setText(_("Runtime: ") + (f"{runtime} min" if runtime != 'N/A' else runtime))
+        
+        # Adult content
+        adult = self.details.get('adult', False)
+        self["adult"].setText(_("Adult Content: ") + (_("Yes") if adult else _("No")))
+        
+        # Genres
+        genres = self.details.get('genres', [])
+        genres_text = ", ".join(genres) if genres else _("No genres available")
+        self["genres"].setText(_("Genres: ") + genres_text)
+        
+        # Overview
+        overview = self.details.get('overview', 'N/A')
+        self["overview"].setText(overview)
+        
+        # Load images
+        self.loadImage("poster", "poster.jpg")
+        self.loadImage("logo", "logo.png")
+        
+        # Load cast images and names
+        cast = self.details.get('cast', [])
+        cast_folder = os.path.join(self.images_folder, "cast")
+        
+        if os.path.exists(cast_folder):
+            cast_files = [f for f in os.listdir(cast_folder) if f.endswith('.jpg')]
+            for i, cast_file in enumerate(cast_files[:4]):  # Load up to 4 cast images
+                self.loadImage(f"cast{i+1}", os.path.join("cast", cast_file))
+                
+                # Set cast name and character if available
+                if i < len(cast):
+                    actor = cast[i]
+                    actor_name = actor.get('name', 'N/A')
+                    character = actor.get('character', 'N/A')
+                    self[f"cast{i+1}_name"].setText(f"{actor_name}\nas {character}")
+
+    def loadImage(self, widget_name, image_path):
+        full_path = os.path.join(self.images_folder, image_path)
+        if os.path.exists(full_path):
+            try:
+                from Tools.LoadPixmap import LoadPixmap
+                pixmap = LoadPixmap(full_path)
+                self[widget_name].instance.setPixmap(pixmap)
+            except Exception as e:
+                print(f"Error loading image {full_path}: {e}")
 
 class E2SubsSeeker(SubsSeeker):
     def __init__(self, session, searchSettings, debug=False):
@@ -2618,24 +3228,14 @@ class SubsChooser(Screen):
             {
                 "ok": self.ok,
                 "cancel": self.close,
-
                 "red": self.embeddedSubsSelection,
-                "green": lambda: None,
+                "green": self.tmdbScraperSelection,  # Changed from lambda: None
                 "yellow": self.downloadedSubsSelection,
                 "blue": self.webSubsSelection,
-
                 "up": self["file_list"].up,
-                #"upRepeated": self["file_list"].up,
-                #"upUp": lambda: None,
                 "left": self["file_list"].pageUp,
-                #"leftRepeated": self["file_list"].pageUp,
-                #"leftUp": lambda: None,
                 "down": self["file_list"].down,
-                #"downRepeated": self["file_list"].down,
-                #"downUp": lambda: None,
                 "right": self["file_list"].pageDown,
-                #"rightRepeated": self["file_list"].pageDown,
-                #"rightUp": lambda: None,
             }, -2)
 
         self.onLayoutFinish.append(self.updateTitle)
@@ -2662,22 +3262,45 @@ class SubsChooser(Screen):
         if self.embeddedList:
             self.session.openWithCallback(self.checkEmbeddedSubsSelection, SubsEmbeddedSelection)
 
-    def webSubsSelection(self):
+    # Add the tmdbScraperSelection method to the SubsChooser class:
+    def tmdbScraperSelection(self):
+        from .subtitles import initSubsSettings
+        settings = initSubsSettings().search
+        eventList = self.titleList if self.titleList else []
+        
+        # If no title list, try to use the video name as fallback
+        if not eventList and self.videoPath:
+            videoName = os.path.splitext(os.path.basename(self.videoPath))[0]
+            eventList.append(videoName)
+        
+        # Open TMDB scraper with the event list
+        self.session.openWithCallback(self.tmdbScraperCallback, TMDBScraperScreen, eventList, settings)
+
+    def tmdbScraperCallback(self, searchTitle=None):
+        if searchTitle:
+            # If we got a search title from TMDB, continue with web subtitle search
+            self.webSubsSelection(searchTitles=[searchTitle])
+
+    def webSubsSelection(self, searchTitles=None):
+        # Use provided searchTitles or fall back to self.titleList
+        actualSearchTitles = searchTitles if searchTitles is not None else self.titleList
+        
         def checkDownloadedSubsSelection(downloadedSubtitle=None):
             if downloadedSubtitle:
                 self.close(downloadedSubtitle, False, True)
 
         def paramsDialogCB(callback=None):
             if callback:
-                self.session.openWithCallback(checkDownloadedSubsSelection, SubsSearch, seeker, subsSettings.search, self.videoPath, self.titleList, resetSearchParams=False)
+                self.session.openWithCallback(checkDownloadedSubsSelection, SubsSearch, seeker, subsSettings.search, self.videoPath, actualSearchTitles, resetSearchParams=False)
 
         def showProvidersErrorCB(callback):
             if not callback:
                 subsSettings.search.showProvidersErrorMessage.value = False
             if subsSettings.search.openParamsDialogOnSearch.value:
-                self.session.openWithCallback(paramsDialogCB, SubsSearchParamsMenu, seeker, subsSettings.search, self.titleList, enabledList=False)
+                self.session.openWithCallback(paramsDialogCB, SubsSearchParamsMenu, seeker, subsSettings.search, actualSearchTitles, enabledList=False)
             else:
-                self.session.openWithCallback(checkDownloadedSubsSelection, SubsSearch, seeker, subsSettings.search, self.videoPath, self.titleList)
+                self.session.openWithCallback(checkDownloadedSubsSelection, SubsSearch, seeker, subsSettings.search, self.videoPath, actualSearchTitles)
+                
         subsSettings = self.subsSettings
         if not self.searchSupport:
             return
@@ -2690,9 +3313,9 @@ class SubsChooser(Screen):
             self.session.openWithCallback(showProvidersErrorCB, MessageBox, msg, type=MessageBox.TYPE_YESNO)
 
         elif subsSettings.search.openParamsDialogOnSearch.value:
-            self.session.openWithCallback(paramsDialogCB, SubsSearchParamsMenu, seeker, subsSettings.search, self.titleList, enabledList=False)
+            self.session.openWithCallback(paramsDialogCB, SubsSearchParamsMenu, seeker, subsSettings.search, actualSearchTitles, enabledList=False)
         else:
-            self.session.openWithCallback(checkDownloadedSubsSelection, SubsSearch, seeker, subsSettings.search, self.videoPath, self.titleList)
+            self.session.openWithCallback(checkDownloadedSubsSelection, SubsSearch, seeker, subsSettings.search, self.videoPath, actualSearchTitles)
 
     def downloadedSubsSelectionCB(self, subtitles, downloadedSubtitle=None):
         fpath = os.path.join(self.subsSettings.search.downloadHistory.path.value, 'hsubtitles.json')
@@ -3236,24 +3859,6 @@ class SubsSearchProcess(object):
             self.recieveMessages(data)
         except (AttributeError, TypeError):
             self.mpart = True
-            # raw = re.findall('(.*?){"message": (.*?), "value": (.*?)}', data)
-            # for size, message, value in raw:
-                # size = size
-                # message = message
-                # value = value
-
-            # value = ''.join(value)
-            # value = value.replace("[", "").replace("]", "")
-            # value = value.split(", ")
-            # if len(value) > 1:
-                # value = value[1]
-            # else:
-                # value = ''.join(value)
-
-            # data = str(size) + '{"message": 5, "value"' + ": " + value + "}"
-
-
-            #DIRTY HACK, FOR NOW
             ''' DIRTY HACK, FOR NOW '''
             if type(data) is bytes:
                 data = data.decode("utf-8", "ignore")
@@ -3267,10 +3872,6 @@ class SubsSearchProcess(object):
                     value = str(i)
                 elif not "cyr" in str(i).lower() and not "lat" in str(i).lower() and not "latinica" in str(i).lower():  #1 cirilica sa oznakom cyr i 1 lainica ali bez oznake lat
                     value = str(i)
-                # elif 'utf-8' in str(i).lower() or 'utf8' in str(i).lower() and not 'lat' in str(i).lower() and not "latin" in str(i).lower():
-                    # value = str(i)
-                # else:
-                    # value = value[0]
 
             data = str(size) + '{"message": 5, "value"' + ": " + value + "}"
             self.recieveMessages(data)
@@ -3756,7 +4357,6 @@ class SubsSearchDownloadOptions(Screen, ConfigListScreen):
         if vPath is not None and os.path.isfile(vPath):
             saveToOptions.append(('video', _('Next to video')))
         if saveAs == 'default':
-            # we don't know what the default filename will be
             saveAs = 'version'
         elif saveAs == 'video' and vPath is None:
             saveAs = 'version'
@@ -3991,8 +4591,6 @@ class SubsSupportLogScreen(Screen):
         self.setTitle(_("SubsSupport Log"))
         self["logtext"] = ScrollLabel()
         self["key_red"] = StaticText(_("Close"))
-        
-        # Updated ActionMap with scroll controls
         self["actions"] = ActionMap(["OkCancelActions", "ColorActions", "DirectionActions"],
         {
             "ok": self.close,
@@ -4097,67 +4695,73 @@ class SubsSearch(Screen):
             <ePixmap pixmap="skin_default/buttons/key_blue.png" position="1013,727" size="35,25" transparent="1" alphatest="on" />
             <widget source="key_blue" render="Label" position = "1056,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_info.png" position="1360,727" size="35,25" transparent="1" alphatest="on" />
+            <widget name="poster" position="570,10" size="120,180" zPosition="2" />
         </screen>
         """
     else:
         skin = """
-        <screen name="SubsSearch" position="center,center" size="700,520" zPosition="3" >
-            <widget source="search_info" render="Listbox" position="10,10" size="680,150" zPosition="3" scrollbarMode="showNever"  transparent="1" >
-                <convert type="TemplatedMultiContent">
-                    {"templates":
-                        {"default": (22, [
-                            MultiContentEntryText(pos = (0, 0),   size = (200, 22),  font = 0, color = 0xDAA520, flags = RT_HALIGN_LEFT,  text = 0), # langname,
-                            MultiContentEntryText(pos = (205, 0),   size = (400, 22),  font = 0, flags = RT_HALIGN_LEFT,  text = 1)
-                        ], False, "showNever"),
-                        },
-                    "fonts": [gFont("Regular", 18)],
-                    "itemHeight":22,
-                    }
-                </convert>
-            </widget>
-            <widget source="header_country" render="Label" position = "5,175" size="120,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
-            <widget source="header_release" render="Label" position = "145,175" size="335,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
-            <widget source="header_provider" render="Label" position = "505, 175" size="135,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
-            <widget source="header_sync" render="Label" position = "650, 175" size="20,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
-            <eLabel position="5,205" size="690,1" backgroundColor="#999999" />
-            <widget name="loadmessage"  position="5,210" size="690,260" valign="center" halign="center" font="Regular;19" foregroundColor="#ffffff" zPosition="4" />
-            <widget name="errormessage" position="5,210" size="690,260" valign="center" halign="center" font="Regular;19" foregroundColor="#ff0000" zPosition="5" />
-            <widget source="subtitles" render="Listbox" scrollbarMode="showOnDemand" position="5,210" size="690,260" zPosition="3" transparent="1" >
-                <convert type="TemplatedMultiContent">
-                    {"templates":
-                        {"default": (23, [
-                            MultiContentEntryPixmapAlphaBlend(pos = (0, 0),   size = (24, 24), png=0), # key,
-                            MultiContentEntryText(pos = (30, 0),   size = (100, 25),  font = 0, flags = RT_HALIGN_LEFT,  text = 1), # language,
-                            MultiContentEntryText(pos = (140, 0),  size = (335, 25),  font = 0, flags = RT_HALIGN_LEFT,  text = 2), # filename,
-                            MultiContentEntryText(pos = (500, 0), size = (135, 25), font = 0, flags = RT_HALIGN_LEFT,  text = 3), # size,
-                            MultiContentEntryPixmapAlphaBlend(pos = (645, 0),   size = (24, 24), png=4), # syncPng,
-                        ], True, "showOnDemand"),
-                        },
-                    "fonts": [gFont("Regular", 18), gFont("Regular", 16)],
-                    "itemHeight": 23
-                    }
-                </convert>
-            </widget>
-            <eLabel position="5,475" size="690,1" backgroundColor="#999999" />
-            <widget source="key_menu_img" render="Pixmap" pixmap="skin_default/buttons/key_menu.png" position="3,485" size="35,25" transparent="1" alphatest="on" >
-                <convert type="ConditionalShowHide" />
-            </widget>
-            <ePixmap  pixmap="skin_default/buttons/key_red.png" position="40,485" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_red" render="Label" position = "80, 485" size="120,25" font="Regular;20" halign="left" foregroundColor="white" />
-            <ePixmap pixmap="skin_default/buttons/key_green.png" position="205,485" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_green" render="Label" position = "245, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
-            <ePixmap pixmap="skin_default/buttons/key_yellow.png" position="365,485" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_yellow" render="Label" position = "405, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
-            <ePixmap pixmap="skin_default/buttons/key_blue.png" position="525,485" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_blue" render="Label" position = "565, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
-            <ePixmap pixmap="skin_default/buttons/key_info.png" position="700,485" size="35,25" transparent="1" alphatest="on" />
-        </screen> """
+        <screen name="SubsSearch" position="center,center" size="700,520" zPosition="3">
+    <widget source="search_info" render="Listbox" position="10,10" size="550,150" zPosition="3" scrollbarMode="showNever" transparent="1">
+        <convert type="TemplatedMultiContent">
+            {"templates":
+                {"default": (22, [
+                    MultiContentEntryText(pos = (0, 0),   size = (200, 22),  font = 0, color = 0xDAA520, flags = RT_HALIGN_LEFT,  text = 0), # langname,
+                    MultiContentEntryText(pos = (205, 0),   size = (400, 22),  font = 0, flags = RT_HALIGN_LEFT,  text = 1)
+                ], False, "showNever"),
+                },
+            "fonts": [gFont("Regular", 18)],
+            "itemHeight":22,
+            }
+        </convert>
+    </widget>
+    <widget source="header_country" render="Label" position="5,175" size="120,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
+    <widget source="header_release" render="Label" position="145,175" size="335,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
+    <widget source="header_provider" render="Label" position="505, 175" size="135,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
+    <widget source="header_sync" render="Label" position="650, 175" size="20,25" font="Regular;18" halign="left" foregroundColor="#0xcccccc" />
+    <eLabel position="5,205" size="690,1" backgroundColor="#999999" />
+    <widget name="loadmessage" position="5,210" size="690,260" valign="center" halign="center" font="Regular;19" foregroundColor="#ffffff" zPosition="4" />
+    <widget name="errormessage" position="5,210" size="690,260" valign="center" halign="center" font="Regular;19" foregroundColor="#ff0000" zPosition="5" />
+    <widget source="subtitles" render="Listbox" scrollbarMode="showOnDemand" position="5,210" size="690,260" zPosition="3" transparent="1">
+        <convert type="TemplatedMultiContent">
+            {"templates":
+                {"default": (23, [
+                    MultiContentEntryPixmapAlphaBlend(pos = (0, 0),   size = (24, 24), png=0), # key,
+                    MultiContentEntryText(pos = (30, 0),   size = (100, 25),  font = 0, flags = RT_HALIGN_LEFT,  text = 1), # language,
+                    MultiContentEntryText(pos = (140, 0),  size = (335, 25),  font = 0, flags = RT_HALIGN_LEFT,  text = 2), # filename,
+                    MultiContentEntryText(pos = (500, 0), size = (135, 25), font = 0, flags = RT_HALIGN_LEFT,  text = 3), # size,
+                    MultiContentEntryPixmapAlphaBlend(pos = (645, 0),   size = (24, 24), png=4), # syncPng,
+                ], True, "showOnDemand"),
+                },
+            "fonts": [gFont("Regular", 18), gFont("Regular", 16)],
+            "itemHeight": 23
+            }
+        </convert>
+    </widget>
+    <eLabel position="5,475" size="690,1" backgroundColor="#999999" />
+    <widget source="key_menu_img" render="Pixmap" pixmap="skin_default/buttons/key_menu.png" position="3,485" size="35,25" transparent="1" alphatest="on">
+        <convert type="ConditionalShowHide" />
+    </widget>
+    <ePixmap pixmap="skin_default/buttons/key_red.png" position="40,485" size="35,25" transparent="1" alphatest="on" />
+    <widget source="key_red" render="Label" position="80, 485" size="120,25" font="Regular;20" halign="left" foregroundColor="white" />
+    <ePixmap pixmap="skin_default/buttons/key_green.png" position="205,485" size="35,25" transparent="1" alphatest="on" />
+    <widget source="key_green" render="Label" position="245, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
+    <ePixmap pixmap="skin_default/buttons/key_yellow.png" position="365,485" size="35,25" transparent="1" alphatest="on" />
+    <widget source="key_yellow" render="Label" position="405, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
+    <ePixmap pixmap="skin_default/buttons/key_blue.png" position="525,485" size="35,25" transparent="1" alphatest="on" />
+    <widget source="key_blue" render="Label" position="565, 485" size="110,25" font="Regular;20" halign="left" foregroundColor="white" />
+    <ePixmap pixmap="skin_default/buttons/key_info.png" position="700,485" size="35,25" transparent="1" alphatest="on" />
+    <widget name="poster" position="570,10" size="120,180" zPosition="2" />
+</screen> """
 
     def __init__(self, session, seeker, searchSettings, filepath=None, searchTitles=None, resetSearchParams=True, standAlone=False):
         Screen.__init__(self, session)
         self.searchSettings = searchSettings
         self.standAlone = standAlone
         searchTitles = searchTitles or [""]
+        from Components.config import config
+        TMDBbackup_path = config.plugins.subtitlesSupport.settingsTMDBDataPath.value
+        self.detailsPath = os.path.join(TMDBbackup_path, "details")
+        self.imagesPath = os.path.join(TMDBbackup_path, "images")        
         self.searchParamsHelper = SearchParamsHelper(seeker, searchSettings)
         self.seeker = seeker
         self.searchExpression = searchTitles[0]
@@ -4173,6 +4777,11 @@ class SubsSearch(Screen):
         self.searchEpisode = searchSettings.episode
         self.searchProvider = searchSettings.provider
         self.searchUseFilePath = searchSettings.useFilePath
+        self["poster"] = Pixmap()
+        self.posterRefreshTimer = eTimer()
+        self.posterRefreshTimer.callback.append(self.refreshPosterPeriodically)
+        self.posterRefreshCount = 0
+        self.maxPosterRefreshAttempts = 5  # Try for 15 seconds (5 attempts × 3 seconds)        
         self.__downloadedSubtitles = []
         self.__downloading = False
         self.__searching = False
@@ -4209,17 +4818,9 @@ class SubsSearch(Screen):
         self["listActions"] = ActionMap(["DirectionActions"],
         {
             "up": self.keyUp,
-            #"upRepeated": self.keyUp,
-            #"upUp": lambda: None,
             "down": self.keyDown,
-            #"downRepeated": self.keyDown,
-            #"downUp": lambda: None,
             "right": self.keyRight,
-            #"rightRepeated": self.keyRight,
-            #"rightUp": lambda: None,
             "left": self.keyLeft,
-            #"leftRepeated": self.keyLeft,
-            #"leftUp": lambda: None,
         }, -2)
 
         self["searchActions"] = ActionMap(["OkCancelActions"],
@@ -4239,26 +4840,17 @@ class SubsSearch(Screen):
         self["contextMenuActions"] = ActionMap(["DirectionActions", "OkCancelActions", "MenuActions"],
         {
             "up": self.__contextMenu.up,
-            #"upRepeated": self.__contextMenu.up,
-            #"upUp": lambda: None,
             "down": self.__contextMenu.down,
-            #"downRepeated": self.__contextMenu.down,
-            #"downUp": lambda: None,
             "right": self.__contextMenu.right,
-            #"rightRepeated": self.__contextMenu.right,
-            #"rightUp": lambda: None,
             "left": self.__contextMenu.left,
-            #"leftRepeated": self.__contextMenu.left,
-            #"leftUp": lambda: None,
-
             "ok": self.contextMenuOk,
             "cancel": self.contextMenuCancel,
-
             "menu": self.contextMenuCancel,
          })
         self["contextMenuActions"].setEnabled(False)
         self.message = Message(self['loadmessage'], self['errormessage'])
         self.onLayoutFinish.append(self.updateTitle)
+        self.onLayoutFinish.append(self.delayedPosterUpdate)
         self.onLayoutFinish.append(self.__getSubtitlesRenderer)
         if resetSearchParams:
             self.onLayoutFinish.append(self.detectSearchParams)
@@ -4352,20 +4944,17 @@ class SubsSearch(Screen):
             self["key_yellow"].text = ""
             self["key_blue"].text = ""
             self["key_menu_img"].boolean = False
-            #self["key_info_img"].boolean = False
         elif self.__downloading:
             self["key_red"].text = ""
             self["key_green"].text = ""
             self["key_yellow"].text = ""
             self["key_blue"].text = ""
             self["key_menu_img"].boolean = False
-            #self["key_info_img"].boolean = False
         else:
             self["key_red"].text = (_("Update"))
             self["key_green"].text = (_("Search"))
             self["key_yellow"].text = (_("History"))
             self["key_blue"].text = (_("Settings"))
-            #self["key_info_img"].boolean = True
             if self["subtitles"].count() > 0:
                 self["key_menu_img"].boolean = True
 
@@ -4775,14 +5364,183 @@ class SubsSearch(Screen):
            self.close(False) 
 ### End EDit
 
+    def delayedPosterUpdate(self):
+        """Update poster after a short delay to ensure search parameters are set"""
+        from enigma import eTimer
+        self.posterTimer = eTimer()
+        self.posterTimer.callback.append(self.updatePoster)
+        self.posterTimer.start(1000, True)  # 1 second delay
+        
+    def updatePoster(self):
+        """Update the movie poster based on search title and year"""
+        try:
+            title = self.searchTitle.value
+            year = str(self.searchYear.value) if self.searchYear.value else ""
+            
+            print(f"[SubsSearch] Looking for poster for: {title} ({year})")
+            
+            if title:
+                # Try multiple folder name variations
+                possible_folders = self.generatePossibleFolderNames(title, year)
+                
+                images_dir = self.imagesPath
+                
+                # Check if images directory exists
+                if not os.path.exists(images_dir):
+                    print(f"[SubsSearch] Images directory does not exist: {images_dir}")
+                    self.showDefaultPoster()
+                    return
+                
+                # Look for matching folders
+                matching_folder = self.findMatchingFolder(images_dir, possible_folders)
+                
+                if matching_folder:
+                    poster_path = os.path.join(images_dir, matching_folder, "poster.jpg")
+                    print(f"[SubsSearch] Trying poster path: {poster_path}")
+                    
+                    if os.path.exists(poster_path):
+                        from Tools.LoadPixmap import LoadPixmap
+                        try:
+                            pixmap = LoadPixmap(poster_path)
+                            if pixmap:
+                                self["poster"].instance.setPixmap(pixmap)
+                                self["poster"].show()
+                                print(f"[SubsSearch] Poster loaded successfully: {poster_path}")
+                                
+                                # Stop the refresh timer since we found the poster
+                                self.posterRefreshTimer.stop()
+                                self.posterRefreshCount = 0
+                                return
+                            else:
+                                print(f"[SubsSearch] Failed to load pixmap: {poster_path}")
+                        except Exception as e:
+                            print(f"[SubsSearch] Error loading poster: {e}")
+                    else:
+                        print(f"[SubsSearch] Poster file does not exist: {poster_path}")
+                else:
+                    print(f"[SubsSearch] No matching folder found for: {title}")
+                    # List available folders for debugging
+                    available_folders = [f for f in os.listdir(images_dir) if os.path.isdir(os.path.join(images_dir, f))]
+                    print(f"[SubsSearch] Available folders: {available_folders}")
+            
+            # If no poster found, show default poster and start refresh timer
+            self.showDefaultPoster()
+            self.startPosterRefreshTimer()
+                
+        except Exception as e:
+            print(f"[SubsSearch] Error in updatePoster: {e}")
+            import traceback
+            traceback.print_exc()
+            self.showDefaultPoster()
+            self.startPosterRefreshTimer()
+
+    def generatePossibleFolderNames(self, title, year):
+        """Generate all possible folder name variations"""
+        # Remove any year from the title if present
+        clean_title = re.sub(r'\s*\(\d{4}\)$', '', title).strip()
+        
+        # Format title for folder name (replace special characters)
+        formatted_title = clean_title.replace(' ', '_').replace(':', '_').replace('/', '_').replace('\\', '_').replace('?', '_').replace('*', '_')
+        
+        possible_folders = []
+        
+        # Try different combinations with and without year
+        if year:
+            # With year
+            possible_folders.append(f"{formatted_title}_{year}")
+            possible_folders.append(f"{clean_title.replace(' ', '_')}_{year}")
+            
+            # Try with original title formatting (with colons)
+            if ':' in clean_title:
+                possible_folders.append(f"{clean_title.replace(' ', '_')}_{year}")
+        
+        # Without year
+        possible_folders.append(formatted_title)
+        possible_folders.append(clean_title.replace(' ', '_'))
+        
+        # Try with original title formatting (with colons)
+        if ':' in clean_title:
+            possible_folders.append(clean_title.replace(' ', '_'))
+        
+        return possible_folders
+    
+    def findMatchingFolder(self, images_dir, possible_folders):
+        """Find a matching folder from the list of possible names"""
+        # First try exact matches
+        for folder in os.listdir(images_dir):
+            folder_path = os.path.join(images_dir, folder)
+            if os.path.isdir(folder_path) and folder in possible_folders:
+                return folder
+        
+        # Then try partial matches (starts with)
+        for folder in os.listdir(images_dir):
+            folder_path = os.path.join(images_dir, folder)
+            if os.path.isdir(folder_path):
+                for possible_folder in possible_folders:
+                    if folder.startswith(possible_folder):
+                        return folder
+        
+        # Finally try case-insensitive matches
+        possible_folders_lower = [f.lower() for f in possible_folders]
+        for folder in os.listdir(images_dir):
+            folder_path = os.path.join(images_dir, folder)
+            if os.path.isdir(folder_path) and folder.lower() in possible_folders_lower:
+                return folder
+        
+        return None
+
+    def startPosterRefreshTimer(self):
+        """Start the timer to periodically check for posters"""
+        if self.posterRefreshCount < self.maxPosterRefreshAttempts:
+            self.posterRefreshTimer.start(6000, True)  # Check every 3 seconds
+            self.posterRefreshCount += 1
+            print(f"[SubsSearch] Poster refresh scheduled (attempt {self.posterRefreshCount}/{self.maxPosterRefreshAttempts})")
+        else:
+            print("[SubsSearch] Max poster refresh attempts reached")
+    
+    def refreshPosterPeriodically(self):
+        """Periodically check if the poster has been downloaded"""
+        print("[SubsSearch] Refreshing poster check...")
+        self.updatePoster()
+    
+    def showDefaultPoster(self):
+        """Show default poster when no specific poster is found"""
+        try:
+            default_poster = "/usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/img/default_poster.jpg"
+            # Fallback to a simple default if the specified one doesn't exist
+            if not os.path.exists(default_poster):
+                default_poster = "/usr/share/enigma2/skin_default/no_cover.png"
+            
+            if os.path.exists(default_poster):
+                from Tools.LoadPixmap import LoadPixmap
+                self["poster"].instance.setPixmap(LoadPixmap(default_poster))
+                self["poster"].show()
+                print("[SubsSearch] Default poster loaded")
+            else:
+                print("[SubsSearch] Default poster not found, hiding poster widget")
+                self["poster"].hide()
+        except Exception as e:
+            print(f"[SubsSearch] Error loading default poster: {e}")
+            self["poster"].hide()
+
     def updateSearchParams(self):
         def updateSearchParamsCB(callback=None):
             if callback:
                 self.updateSearchInfoList()
                 self.updateBottomMenu()
+                
+                # Reset refresh counter and update poster
+                self.posterRefreshCount = 0
+                self.updatePoster()
+                
                 if not self.searchSettings.manualSearch.value:
                     self.searchSubs()
         self.session.openWithCallback(updateSearchParamsCB, SubsSearchParamsMenu, self.seeker, self.searchSettings, self.searchTitles, False)
+    
+    def close(self, result=None):
+        """Override close method to stop the refresh timer"""
+        self.posterRefreshTimer.stop()
+        Screen.close(self, result)
 
     def openDownloadHistory(self):
         def openDownloadHistoryCB(subtitles, subtitle=None):
@@ -5179,48 +5937,28 @@ class SubsSearchParamsMenu(Screen, ConfigListScreen):
             {
                  "ok": self.switchToConfigList,
                  "cancel": self.cancelToConfigList,
-
                  "red": self.cancelToHistoryList,
                  "green": self.cancelToSuggestionsList,
                  "yellow": lambda: None,
                  "blue": lambda: None,
-
                  "right": self.keyRight,
-                 #"rightRepeated": self.keyRight,
-                 #"rightUp": lambda: None,
                  "left": self.keyLeft,
-                 #"leftRepeated": self.keyLeft,
-                 #"leftUp": lambda: None,
                  "up": self.keyUp,
-                 #"upRepeated": self.keyUp,
-                 #"upUp": lambda: None,
                  "down": self.keyDown,
-                 #"downRepeated": self.keyDown,
-                 #"downUp": lambda: None,
              }, -2)
 
         self["configActions"] = ActionMap(["OkCancelActions", "ColorActions", "DirectionActions"],
             {
                 "ok": self.keyOK,
                 "cancel": self.keyCancel,
-
                 "red": self.switchToHistoryList,
                 "green": self.switchToSuggestionsList,
                 "yellow": lambda: None,
                 "blue": self.toggleSourceTitle,
-
                 "right": self.keyRight,
-                #"rightRepeated": self.keyRight,
-                #"rightUp": lambda: None,
                 "left": self.keyLeft,
-                #"leftRepeated": self.keyLeft,
-                #"leftUp": lambda: None,
                 "up": self.keyUp,
-                #"upRepeated": self.keyUp,
-                #"upUp": lambda: None,
                 "down": self.keyDown,
-                #"downRepeated": self.keyDown,
-                #"downUp": lambda: None
             }, -2)
 
         self['suggestionActions'].setEnabled(False)
