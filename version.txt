@@ -1,2 +1,2 @@
-version='1.7.0.29'
-description='1- Now you can search subtitles for VOD directly. \n2- Fix some code errors. \n3- In Subtitle line picker , Add CH+ to reach 1st line and CH- to reach last line. \n4- Add version in the title of subssupport settings screen.'
+version='1.8.0.01'
+description='1- Add support for searching for subtitles using the help of tmdb to identify the correct movie. \n2- Saving movie details and poster , logo , background and cast in internal path or predefined path. \n3- Add movie poster in subsearch screen. \n4- You can see movie information with images support using yellow button .\n5- Before performing new search , it checks for similar search dat and if found , it will use the saved data so saving time and bandwidth for another search .\n6- It is better to predefine tmdb data path from General Settings to save all data on external disk .\n7- Notice that some data needs to modify your skin if it is already support SubsSupport plugin.'
