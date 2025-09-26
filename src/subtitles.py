@@ -2740,7 +2740,32 @@ MultiContentEntryText(pos = (120, 90), size = (850, 50), font = 2, flags = RT_HA
 
     def selectMovie(self):
         if self["list"].getCurrent():
-            idx = self["list"].getCurrentIndex()
+            # Use try-except to handle different List implementations
+            try:
+                # First try the common method (used in most images)
+                idx = self["list"].getCurrentIndex()
+            except AttributeError:
+                try:
+                    # Try alternative method names
+                    idx = self["list"].getSelectedIndex()
+                except AttributeError:
+                    try:
+                        # Another common alternative
+                        idx = self["list"].index
+                    except AttributeError:
+                        # Fallback: get index from the list directly
+                        current = self["list"].getCurrent()
+                        if current and self.movies:
+                            # Find the index by matching the current item with movies list
+                            for i, movie in enumerate(self.movies):
+                                if movie.get('title') == current[1]:  # Compare title
+                                    idx = i
+                                    break
+                            else:
+                                idx = 0
+                        else:
+                            idx = 0
+            
             if 0 <= idx < len(self.movies):
                 selected_movie = self.movies[idx]
                 
@@ -2856,7 +2881,32 @@ MultiContentEntryText(pos = (120, 90), size = (850, 50), font = 2, flags = RT_HA
 
     def showDetails(self):
         if self["list"].getCurrent():
-            idx = self["list"].getCurrentIndex()
+            # Use try-except to handle different List implementations
+            try:
+                # First try the common method (used in most images)
+                idx = self["list"].getCurrentIndex()
+            except AttributeError:
+                try:
+                    # Try alternative method names
+                    idx = self["list"].getSelectedIndex()
+                except AttributeError:
+                    try:
+                        # Another common alternative
+                        idx = self["list"].index
+                    except AttributeError:
+                        # Fallback: get index from the list directly
+                        current = self["list"].getCurrent()
+                        if current and self.movies:
+                            # Find the index by matching the current item with movies list
+                            for i, movie in enumerate(self.movies):
+                                if movie.get('title') == current[1]:  # Compare title
+                                    idx = i
+                                    break
+                            else:
+                                idx = 0
+                        else:
+                            idx = 0
+            
             if 0 <= idx < len(self.movies):
                 selected_movie = self.movies[idx]
                 
@@ -2895,7 +2945,32 @@ MultiContentEntryText(pos = (120, 90), size = (850, 50), font = 2, flags = RT_HA
 
     def downloadImages(self):
         if self["list"].getCurrent():
-            idx = self["list"].getCurrentIndex()
+            # Use try-except to handle different List implementations
+            try:
+                # First try the common method (used in most images)
+                idx = self["list"].getCurrentIndex()
+            except AttributeError:
+                try:
+                    # Try alternative method names
+                    idx = self["list"].getSelectedIndex()
+                except AttributeError:
+                    try:
+                        # Another common alternative
+                        idx = self["list"].index
+                    except AttributeError:
+                        # Fallback: get index from the list directly
+                        current = self["list"].getCurrent()
+                        if current and self.movies:
+                            # Find the index by matching the current item with movies list
+                            for i, movie in enumerate(self.movies):
+                                if movie.get('title') == current[1]:  # Compare title
+                                    idx = i
+                                    break
+                            else:
+                                idx = 0
+                        else:
+                            idx = 0
+            
             if 0 <= idx < len(self.movies):
                 selected_movie = self.movies[idx]
                 
