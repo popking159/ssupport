@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: SubsSupport\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-31 16:02+0100\n"
-"PO-Revision-Date: 2024-11-10 19:01+0200\n"
+"POT-Creation-Date: 2025-09-22 21:33+0300\n"
+"PO-Revision-Date: 2025-09-22 22:44+0300\n"
 "Last-Translator: \n"
 "Language-Team: giorbak\n"
 "Language: el\n"
@@ -16,551 +16,898 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.2\n"
+"X-Generator: Poedit 3.7\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
-msgid "Add subtitle's language to filename"
-msgstr "Προσθήκη γλώσσας υποτίτλου στο όνομα αρχείου"
-
-msgid "All"
-msgstr "Όλοι"
-
-msgid "Always ask before overwriting existing subtitles"
-msgstr "Ερώτηση πριν την αντικατάσταση των υπαρχόντων υποτίτλων"
-
-msgid "Append language to filename"
-msgstr "Προσθήκη γλώσσας στο όνομα αρχείου"
-
-msgid "Arabic"
-msgstr "Αραβικά"
-
-msgid "Ask on remove action"
-msgstr "Ερώτηση σχετικά με την ενέργεια αφαίρεσης"
-
-msgid "Auto sync to current event"
-msgstr "Αυτόματος συγχρονισμός με τον τρέχον πρόγραμμα"
-
-msgid "Background"
-msgstr "Φόντο"
-
-msgid "Background X-offset"
-msgstr "Μετατόπιση X φόντου"
-
-msgid "Background Y-offset"
-msgstr "Μετατόπιση Y φόντου"
-
-msgid "Background color"
-msgstr "Χρώμα φόντου"
-
-msgid "Background transparency"
-msgstr "Διαφάνεια φόντου"
-
-msgid "Background type"
-msgstr "Τύπος φόντου"
-
-msgid "Cancel"
-msgstr "Άκυρο"
-
-msgid "Cannot decode subtitles. Try another encoding group"
-msgstr "Δεν είναι δυνατή η αποκωδικοποίηση των υποτίτλων. Δοκιμάστε μια άλλη ομάδα κωδικοποίησης"
-
-msgid "Cannot load subtitles. Invalid path"
-msgstr "Δεν είναι δυνατή η φόρτωση των υποτίτλων. Η διαδρομή δεν είναι έγκυρη"
-
-msgid "Cannot parse subtitles. Invalid subtitles format"
-msgstr "Δεν είναι δυνατή η ανάλυση των υποτίτλων. Η μορφή υποτίτλων δεν είναι έγκυρη"
-
-msgid "Cannot parse subtitles. Not supported subtitles format"
-msgstr "Δεν είναι δυνατή η ανάλυση των υποτίτλων. Δεν υποστηρίζεται η μορφή υποτίτλων"
-
-msgid "Cannot save download history, for details look in log"
-msgstr "Δεν είναι δυνατή η αποθήκευση του ιστορικού λήψεων, για λεπτομέρειες ανατρέξτε στο αρχείο καταγραφής"
-
-msgid "Central and Eastern Europe"
-msgstr "Κεντρικής και Ανατολικής Ευρώπης"
-
-msgid "Change encoding"
-msgstr "Αλλαγή κωδικοποίησης"
-
-msgid "Change subssupport settings"
-msgstr "Αλλαγή ρυθμίσεων του SubsSupport"
-
-msgid "Check search parameters before subtitles search"
-msgstr "Έλεγχος παραμέτρων αναζήτησης πριν την αναζήτηση υποτίτλων"
-
-msgid "Choose Subtitles"
-msgstr "Επιλογή υποτίτλων"
-
-msgid "Choose from downloaded subtitles"
-msgstr "Επιλογή από ληφθέντες υπότιτλους"
-
-msgid "Choose from embedded subtitles"
-msgstr "Επιλογή από ενσωματωμένους υπότιτλους"
-
-msgid "Choose from web subtitles"
-msgstr "Επιλογή από υπότιτλους στο διαδίκτυο"
-
-msgid "Choose subtitles"
-msgstr "Επιλογή υποτίτλων"
-
-msgid "Color"
-msgstr "Χρώμα"
-
-msgid "Currently choosed subtitles"
-msgstr "Επιλεγμένοι υπότιτλοι"
-
-msgid "DVB player settings"
-msgstr "Ρυθμίσεις αναπαραγωγής DVB"
-
-msgid "Default"
-msgstr "Προεπιλογή"
-
-msgid "Do you want to proceed?"
-msgstr "Θέλετε να προχωρήσετε;"
-
-msgid "Do you want to show this message again?"
-msgstr "Θέλετε να εμφανιστεί ξανά αυτό το μήνυμα;"
-
-msgid "Download (more...)"
-msgstr "Λήψη (περισσότερα...)"
-
-msgid "Download (next to video)"
-msgstr "Λήψη (μαζί με το βίντεο)"
-
-msgid "Download (user defined)"
-msgstr "Λήψη (καθορισμένο από τον χρήστη)"
-
-msgid "Download and Load (more...)"
-msgstr "Λήψη και φόρτωση (περισσότερα...)"
-
-msgid "Download and Load (next to video)"
-msgstr "Λήψη και φόρτωση (μαζί με το βίντεο)"
-
-msgid "Download and Load (user defined) "
-msgstr "Λήψη και φόρτωση (καθορισμένο από τον χρήστη)"
-
-msgid "Download date"
-msgstr "Ημερ/νία λήψης"
-
-msgid "Download options"
-msgstr "Επιλογές λήψης"
-
-msgid "Download subtitles for your videos"
-msgstr "Λήψη υποτίτλων για τα βίντεό σας"
-
-msgid "Downloaded Subtitles"
-msgstr "Ληφθέντες υπότιτλοι"
-
-msgid "Downloaded Subtitles - Settings"
-msgstr "Ληφθέντες υπότιτλοι - Ρυθμίσεις"
-
-msgid "Duration"
-msgstr "Διάρκεια"
-
-msgid "Edit Filename"
-msgstr "Επεξεργασία ονόματος αρχείου"
-
-msgid "Edit download path"
-msgstr "Επεξεργασία διαδρομής λήψης"
-
-msgid "Embedded Subtitles"
-msgstr "Ενσωματωμένοι υπότιτλοι"
-
-msgid "Embedded subtitles settings"
-msgstr "Ρυθμίσεις ενσωματωμένων υποτίτλων"
-
-msgid "Encoding"
-msgstr "Κωδικοποίηση"
-
-msgid "Encoding:"
-msgstr "Κωδικοποίηση:"
-
-msgid "Entries count:"
-msgstr "Αριθμός καταχωρήσεων:"
-
-msgid "Episode"
-msgstr "Επεισόδιο"
-
-msgid "Event Duration"
-msgstr "Διάρκεια προγράμματος"
-
-msgid "Event Name"
-msgstr "Όνομα προγράμματος"
-
-msgid "Event Time"
-msgstr "Χρόνος προγράμματος"
-
-msgid "External Subtitles settings"
-msgstr "Ρυθμίσεις εξωτερικών υποτίτλων"
-
-msgid "External subtitles settings"
-msgstr "Ρυθμίσεις εξωτερικών υποτίτλων"
-
-msgid "Filename"
-msgstr "Όνομα αρχείου"
-
-msgid "Filename cannot be empty!"
-msgstr "Το όνομα αρχείου δεν μπορεί να είναι κενό!"
-
-msgid "Font color (Bold)"
-msgstr "Χρώμα γραμματοσειράς (έντονη γραφή)"
-
-msgid "Font color (Italic"
-msgstr "Χρώμα γραμματοσειράς (πλάγια γραφή)"
-
-msgid "Font color (Regular)"
-msgstr "Χρώμα γραμματοσειράς (κανονική)"
-
-msgid "Font size"
-msgstr "Μέγεθος γραμματοσειράς"
-
-msgid "Font transparency (Bold)"
-msgstr "Διαφάνεια γραμματοσειράς (έντονη γραφή)"
-
-msgid "Font transparency (Italic)"
-msgstr "Διαφάνεια γραμματοσειράς (πλάγια γραφή)"
-
-msgid "Font transparency (Regular)"
-msgstr "Διαφάνεια γραμματοσειράς (κανονική)"
-
-msgid "Font type (Bold)"
-msgstr "Τύπος γραμματοσειράς (έντονη γραφή)"
-
-msgid "Font type (Italic)"
-msgstr "Τύπος γραμματοσειράς (πλάγια γραφή)"
-
-msgid "Font type (Regular)"
-msgstr "Τύπος γραμματοσειράς (κανονική)"
-
-msgid "For more details please check search settings"
-msgstr "Για περισσότερες λεπτομέρειες, παρακαλώ ελέγξτε τις ρυθμίσεις αναζήτησης"
-
-msgid "General settings"
-msgstr "Γενικές ρυθμίσεις"
-
-msgid "Greek"
-msgstr "Ελληνικά"
-
-msgid "Hide delay"
-msgstr "Απόκρυψη καθυστέρησης"
-
-msgid "History"
-msgstr "Ιστορικό"
-
-msgid "Language"
-msgstr "Γλώσσα"
-
-msgid "Language selection"
-msgstr "Επιλογή γλώσσας"
-
-msgid "List"
-msgstr "Λίστα"
-
-msgid "List + File"
-msgstr "Λίστα + Αρχείο"
-
+#: compat.py:220 subtitles.py:2421
 msgid "List of storage devices"
 msgstr "Λίστα συσκευών αποθήκευσης"
 
-msgid "Load subtitles after download"
-msgstr "Φόρτωση υποτίτλων μετά τη λήψη"
-
-msgid "Load/Save download history directory"
-msgstr "Κατάλογος φόρτωσης/αποθήκευσης ιστορικού λήψεων"
-
-msgid "Manual search"
-msgstr "Χειροκίνητη αναζήτηση"
-
-msgid "Max history entries"
-msgstr "Μέγιστες καταχωρήσεις ιστορικού"
-
-msgid "Movie"
-msgstr "Ταινία"
-
-msgid "Name"
-msgstr "Όνομα"
-
-msgid "Next to video"
-msgstr "Μαζί με το βίντεο"
-
-msgid "No external subtitles are loaded"
-msgstr "Δεν έχουν φορτωθεί εξωτερικοί υπότιτλοι"
-
-msgid "No subtitles found :("
-msgstr "Δεν βρέθηκαν υπότιτλοι :("
-
-msgid "None"
-msgstr "Κανένα"
-
-msgid "PTS check delay"
-msgstr "Καθυστέρηση ελέγχου PTS"
-
+#: compat.py:222 subtitles.py:2423
 msgid "Parent directory"
 msgstr "Γονικός φάκελος"
 
-msgid "Password"
-msgstr "Κωδικός πρόσβασης"
-
-msgid "Path"
-msgstr "Διαδρομή"
-
-msgid "Path doesn't exist!"
-msgstr "Η διαδρομή δεν υπάρχει!"
-
-msgid "Pause video on opening subtitles menu"
-msgstr "Παύση βίντεο κατά το άνοιγμα του μενού υποτίτλων"
-
-msgid "Player delay"
-msgstr "Καθυστέρηση προγράμματος αναπαραγωγής"
-
-msgid "Position"
-msgstr "Θέση"
-
-msgid "Preferred Movie provider"
-msgstr "Προτιμώμενος πάροχος ταινιών"
-
-msgid "Preferred TV show provider"
-msgstr "Προτιμώμενος πάροχος τηλεοπτικών σειρών"
-
-msgid "Preferred languages"
-msgstr "Προτιμώμενες γλώσσες"
-
-msgid "Preferred subtitles language"
-msgstr "Προτιμώμενη γλώσσα υποτίτλων"
-
-msgid "Press OK to Stop"
-msgstr "Πατήστε OK για διακοπή"
-
-msgid "Press OK to confirm"
-msgstr "Πατήστε OK για επιβεβαίωση"
-
-msgid "Provider"
-msgstr "Πάροχος"
-
-msgid "Provider name"
-msgstr "Όνομα παρόχου"
-
-msgid "Refresh delay"
-msgstr "Ανανέωση καθυστέρησης"
-
-msgid "Release"
-msgstr "Όνομα κυκλοφορίας"
-
-msgid "Remove (file)"
-msgstr "Αφαίρεση (αρχείο)"
-
-msgid "Remove Entry (List)"
-msgstr "Αφαίρεση (Λίστα)"
-
-msgid "Remove Entry (List+File)"
-msgstr "Αφαίρεση (Λίστα+Αρχείο)"
-
-msgid "Remove action"
-msgstr "Ενέργεια αφαίρεσης"
-
-msgid "Reset"
-msgstr "Επαναφορά"
-
-msgid "Reset Defaults"
-msgstr "Επαναφορά προεπιλογών"
-
-msgid "Russia"
-msgstr "Ρωσικά"
-
-msgid "S"
-msgstr "Προτ."
-
-msgid "Save"
-msgstr "Αποθήκευση"
-
-msgid "Save as"
-msgstr "Αποθήκευση ως"
-
-msgid "Save downloaded subtitles to history"
-msgstr "Αποθήκευση ληφθέντων υποτίτλων στο ιστορικό"
-
-msgid "Save subtitles as"
-msgstr "Αποθήκευση υποτίτλων ως"
-
-msgid "Save subtitles as (fallback)"
-msgstr "Αποθήκευση υποτίτλων ως (εναλλακτικά)"
-
-msgid "Save subtitles to"
-msgstr "Αποθήκευση υποτίτλων σε"
-
-msgid "Save to"
-msgstr "Αποθήκευση σε"
-
-msgid "Search"
-msgstr "Αναζήτηση"
-
-msgid "Search parameters"
-msgstr "Παράμετροι αναζήτησης"
-
-msgid "Search settings"
-msgstr "Ρυθμίσεις αναζήτησης"
-
-msgid "Search subtitles"
-msgstr "Αναζήτηση υποτίτλων"
-
-msgid "Season"
-msgstr "Σεζόν"
-
-msgid "Select Directory"
-msgstr "Επιλογή καταλόγου"
-
-msgid "Send and search movie hashes"
-msgstr "Αποστολή και αναζήτηση hashes ταινιών"
-
-msgid "Settings"
-msgstr "Ρυθμίσεις"
-
-msgid "Shadow"
-msgstr "Σκιά"
-
-msgid "Shadow X-offset"
-msgstr "Μετατόπιση X σκιάς"
-
-msgid "Shadow Y-offset"
-msgstr "Μετατόπιση Y σκιάς"
-
-msgid "Shadow color"
-msgstr "Χρώμα σκιάς"
-
-msgid "Shadow size"
-msgstr "Μέγεθος σκιάς"
-
-msgid "Shadow type"
-msgstr "Τύπος σκιάς"
-
-msgid "Show expert settings"
-msgstr "Εμφάνιση εξειδικευμένων ρυθμίσεων"
-
-msgid "Some subtitles providers are not working"
-msgstr "Ορισμένοι πάροχοι υποτίτλων δεν λειτουργούν"
-
-msgid "Sort subtitles list by"
-msgstr "Ταξινόμηση λίστας υποτίτλων κατά"
-
-msgid "Source title"
-msgstr "Τίτλος προέλευσης"
-
-msgid "Source title not provided"
-msgstr "Δεν παρέχεται τίτλος προέλευσης"
-
-msgid "State"
-msgstr "Κατάστ."
-
-msgid "SubsSupport DVB player"
-msgstr ""
-
-msgid "SubsSupport downloader"
-msgstr ""
-
-msgid "SubsSupport settings"
-msgstr ""
-
-msgid "Subtitle"
-msgstr "Ο υπότιτλος"
-
-msgid "Subtitles Delay"
-msgstr "Καθυστέρηση υποτίτλων"
-
-msgid "Subtitles FPS"
-msgstr "FPS υποτίτλων"
-
-msgid "Subtitles Position"
-msgstr "Θέση υποτίτλων"
-
-msgid "Subtitles Time"
-msgstr "Χρόνος υποτίτλων"
-
-msgid "Subtitles download path"
-msgstr "Διαδρομή λήψης υποτίτλων"
-
-msgid "Subtitles provider timeout"
-msgstr "Χρονικό όριο παροχής υποτίτλων"
-
-msgid "Subtitles search"
-msgstr "Αναζήτηση υποτίτλων"
-
-msgid "Subtitles search settings"
-msgstr "Ρυθμίσεις αναζήτησης υποτίτλων"
-
-msgid "Subtitles setting"
-msgstr "Ρύθμιση υποτίτλων"
-
-msgid "Subtitles settings"
-msgstr "Ρυθμίσεις υποτίτλων"
-
-msgid "Subtitles settings (embedded)"
-msgstr "Ρυθμίσεις υποτίτλων (ενσωματωμένοι)"
-
-msgid "Subtitles temp path"
-msgstr "Προσωρινή διαδρομή υπότιτλων"
-
-msgid "Subtitles will be downloaded in"
-msgstr "Οι υπότιτλοι θα ληφθούν στο"
-
-msgid ""
-"Subtitles with this name already exist\n"
-"Do you want to overwrite them"
-msgstr ""
-"Υπότιτλοι με αυτό το όνομα υπάρχουν ήδη\n"
-"Θέλετε να τους αντικαταστήσετε"
-
-msgid "Suggestions"
-msgstr "Προτάσεις"
-
-msgid "Supported languages"
-msgstr "Υποστηριζόμενες γλώσσες"
-
-msgid "Switch List"
-msgstr "Εναλλαγή λιστών"
-
-msgid "Sync delay"
-msgstr "Καθυστέρηση συγχρονισμού"
-
-msgid "TV show"
-msgstr "Τηλεοπτική σειρά"
-
-msgid ""
-"There are more subtitles in unpacked archive\n"
-" please select which one do you want to use"
-msgstr ""
-"Υπάρχουν περισσότεροι υπότιτλοι στο αποσυμπιεσμένο αρχείο\n"
-"Παρακαλώ επιλέξτε ποιον θέλετε να χρησιμοποιήσετε"
-
-msgid "There was an error while removing subtitle, please check log"
-msgstr "Παρουσιάστηκε σφάλμα κατά την αφαίρεση του υπότιτλου, παρακαλώ ελέγξτε το αρχείο καταγραφής"
-
-msgid "Time"
-msgstr "Χρόνος"
-
-msgid "Title"
-msgstr "Τίτλος"
-
-msgid "Try update(simplify) search expression and try again.."
-msgstr "Προσπαθήστε να ενημερώσετε (απλοποιήσετε) την έκφραση αναζήτησης και δοκιμάστε ξανά."
-
-msgid "Turkish"
-msgstr "Τουρκικά"
-
-msgid "Turn off subtitles"
-msgstr "Απενεργοποίηση υποτίτλων"
-
-msgid "Type"
-msgstr "Τύπος"
-
+#: compat.py:241 subtitles.py:2442
+msgid "nothing connected"
+msgstr "Δεν έχει συνδεθεί τίποτα"
+
+#: e2_utils.py:123
+msgid "Language selection"
+msgstr "Επιλογή γλώσσας"
+
+#: e2_utils.py:255
 msgid "Type text of picture"
 msgstr "Πληκτρολογήστε το κείμενο της εικόνας"
 
+#: e2_utils.py:401
+msgid "unpack error: cannot get subname"
+msgstr "Σφάλμα αποσυσκευασίας: Δεν είναι δυνατή η λήψη δευτερεύοντος ονόματος"
+
+#: e2_utils.py:417
+msgid "unpack error: cannot open archive"
+msgstr "Σφάλμα αποσυσκευασίας: Δεν είναι δυνατό το άνοιγμα του αρχείου"
+
+#: e2_utils.py:535 subtitles.py:5694 subtitles.py:6184
+msgid "Save"
+msgstr "Αποθήκευση"
+
+#: e2_utils.py:536 subtitles.py:5695 subtitles.py:6183
+msgid "Cancel"
+msgstr "Άκυρο"
+
+#: e2_utils.py:537 subtitles.py:5696
+msgid "Reset Defaults"
+msgstr "Επαναφορά προεπιλογών"
+
+#: plugin.py:124 subtitles.py:2305
+msgid "General settings"
+msgstr "Γενικές ρυθμίσεις"
+
+#: plugin.py:125
+msgid "External subtitles settings"
+msgstr "Ρυθμίσεις εξωτερικών υποτίτλων"
+
+#: plugin.py:126 subtitles.py:2288
+msgid "Embedded subtitles settings"
+msgstr "Ρυθμίσεις ενσωματωμένων υποτίτλων"
+
+#: plugin.py:127
+msgid "Search settings"
+msgstr "Ρυθμίσεις αναζήτησης"
+
+#: plugin.py:128 subtitlesdvb.py:41
+msgid "DVB player settings"
+msgstr "Ρυθμίσεις αναπαραγωγής DVB"
+
+#: plugin.py:129
+msgid "Backup settings"
+msgstr "Αντίγραφο ασφαλείας ρυθμίσεων"
+
+#: plugin.py:130
+msgid "Restore settings"
+msgstr "Επαναφορά ρυθμίσεων"
+
+#: plugin.py:145 plugin.py:347 plugin.py:350
+msgid "SubsSupport settings"
+msgstr "SubsSupport settings"
+
+#: plugin.py:181
+msgid "Please change embedded subtitles settings in Settings / System / Subtitles settings"
+msgstr "Παρακαλώ αλλάξτε τις ρυθμίσεις των ενσωματωμένων υποτίτλων στις Ρυθμίσεις / Σύστημα / Ρυθμίσεις υποτίτλων"
+
+#: plugin.py:203
+#, python-format
+msgid "Cannot write to backup directory: %s"
+msgstr "Δεν είναι δυνατή η εγγραφή στον κατάλογο αντιγράφων ασφαλείας: %s"
+
+#: plugin.py:208
+msgid "Settings file not found"
+msgstr "Το αρχείο ρυθμίσεων δεν βρέθηκε"
+
+#: plugin.py:218
+msgid "Backup file creation failed"
+msgstr "Η δημιουργία του αρχείου αντιγράφου ασφαλείας απέτυχε"
+
+#: plugin.py:220
+msgid "Backup file is empty - no settings found"
+msgstr "Το αρχείο αντιγράφου ασφαλείας είναι κενό - δεν βρέθηκαν ρυθμίσεις"
+
+#: plugin.py:222
+msgid "Settings backup completed successfully!"
+msgstr "Το αντίγραφο ασφαλείας ρυθμίσεων ολοκληρώθηκε με επιτυχία!"
+
+#: plugin.py:225
+msgid "Backup failed!"
+msgstr "Η δημιουργία αντιγράφου ασφαλείας απέτυχε!"
+
+#: plugin.py:232
+#, python-format
+msgid "No backup file found at: %s"
+msgstr "Δεν βρέθηκε αρχείο αντιγράφου ασφαλείας στη θέση: %s"
+
+#: plugin.py:235
+#, python-format
+msgid ""
+"Are you sure you want to restore settings from:\n"
+"%s\n"
+"\n"
+"Enigma2 will restart to apply changes."
+msgstr ""
+"Είστε βέβαιοι ότι θέλετε να επαναφέρετε τις ρυθμίσεις από το:\n"
+"%s;\n"
+"\n"
+"Το Enigma2 θα επανεκκινήσει για να εφαρμοστούν οι αλλαγές."
+
+#: plugin.py:247
+msgid "Backup file no longer exists!"
+msgstr "Το αρχείο αντιγράφου ασφαλείας δεν υπάρχει πλέον!"
+
+#: plugin.py:282
+msgid "Restoring Settings..."
+msgstr "Γίνεται επαναφορά ρυθμίσεων..."
+
+#: plugin.py:290
+msgid "Restore failed!"
+msgstr "Η επαναφορά απέτυχε!"
+
+#: plugin.py:319
+#, python-format
+msgid ""
+"New version %s is available.\n"
+"\n"
+"%s\n"
+"\n"
+"Do you want to install now?"
+msgstr ""
+"Διαθέσιμη νέα έκδοση %s.\n"
+"\n"
+"%s\n"
+"\n"
+"Θέλετε να την εγκαταστήσετε τώρα;"
+
+#: plugin.py:331
+msgid "Installing update..."
+msgstr "Γίνεται εγκατάσταση της ενημέρωσης..."
+
+#: plugin.py:347
+msgid "Change subssupport settings"
+msgstr "Αλλαγή ρυθμίσεων του SubsSupport"
+
+#: plugin.py:348 plugin.py:351
+msgid "SubsSupport downloader"
+msgstr "SubsSupport downloader"
+
+#: plugin.py:348
+msgid "Download subtitles for your videos"
+msgstr "Λήψη υποτίτλων για τα βίντεό σας"
+
+#: plugin.py:349 plugin.py:352
+msgid "SubsSupport DVB player"
+msgstr "SubsSupport DVB player"
+
+#: plugin.py:349
+msgid "watch DVB broadcast with subtitles"
+msgstr "Παρακολούθηση μετάδοσης DVB με υπότιτλους"
+
+#: seek.py:362
+#, python-format
+msgid "unsupported archive %s"
+msgstr "Μη υποστηριζόμενο αρχείο %s"
+
+#: subtitles.py:193
+msgid "top"
+msgstr "Επάνω"
+
+#: subtitles.py:195
+msgid "bottom"
+msgstr "Κάτω"
+
+#: subtitles.py:200
+msgid "red"
+msgstr "Κόκκινο"
+
+#: subtitles.py:201
+msgid "grey"
+msgstr "Γκρι"
+
+#: subtitles.py:202
+msgid "green"
+msgstr "Πράσινο"
+
+#: subtitles.py:203
+msgid "purple"
+msgstr "Μωβ"
+
+#: subtitles.py:204
+msgid "yellow"
+msgstr "Κίτρινο"
+
+#: subtitles.py:205
+msgid "white"
+msgstr "Λευκό"
+
+#: subtitles.py:206
+msgid "blue"
+msgstr "Μπλε"
+
+#: subtitles.py:207
+msgid "black"
+msgstr "Μαύρο"
+
+#: subtitles.py:222
+msgid "opaque"
+msgstr "Αδιαφανής"
+
+#: subtitles.py:224
+msgid "transparent"
+msgstr "Διαφανής"
+
+#: subtitles.py:255
+msgid "offset"
+msgstr "Μετατόπιση"
+
+#: subtitles.py:255
+msgid "border"
+msgstr "Περίγραμμα"
+
+#: subtitles.py:262
+msgid "dynamic"
+msgstr "Δυναμικό"
+
+#: subtitles.py:262
+msgid "static"
+msgstr "Στατικό"
+
+#: subtitles.py:262
+msgid "fixed"
+msgstr "Σταθερό"
+
+#: subtitles.py:304
+msgid "List"
+msgstr "Λίστα"
+
+#: subtitles.py:304
+msgid "List + File"
+msgstr "Λίστα + Αρχείο"
+
+#: subtitles.py:313 subtitles.py:314 subtitles.py:331 subtitles.py:4292 subtitles.py:4302 subtitles.py:4307
+msgid "All"
+msgstr "Όλοι"
+
+#: subtitles.py:316 subtitles.py:4791
+msgid "Language"
+msgstr "Γλώσσα"
+
+#: subtitles.py:316 subtitles.py:3426 subtitles.py:4793 subtitles.py:4914 subtitles.py:6012
+msgid "Provider"
+msgstr "Πάροχος"
+
+#: subtitles.py:317 subtitles.py:318
+msgid "Default"
+msgstr "Προεπιλογή"
+
+#: subtitles.py:317 subtitles.py:318 subtitles.py:4351 subtitles.py:4792
+msgid "Release"
+msgstr "Όνομα κυκλοφορίας"
+
+#: subtitles.py:317 subtitles.py:4353
+msgid "Video filename"
+msgstr "Όνομα αρχείου βίντεο"
+
+#: subtitles.py:319 subtitles.py:4354 subtitles.py:4356
+msgid "User defined"
+msgstr "Καθορισμένο από τον χρήστη"
+
+#: subtitles.py:319 subtitles.py:4358
+msgid "Next to video"
+msgstr "Μαζί με το βίντεο"
+
+#: subtitles.py:327
+msgid "TV show"
+msgstr "Τηλεοπτική σειρά"
+
+#: subtitles.py:327
+msgid "Movie"
+msgstr "Ταινία"
+
+#: subtitles.py:408
+msgid "jump to next subtitle"
+msgstr "Μετάβαση στον επόμενο υπότιτλο"
+
+#: subtitles.py:409
+msgid "jump to previous subtitle"
+msgstr "Μετάβαση στον προηγούμενο υπότιτλο"
+
+#: subtitles.py:410
+msgid "increase subtitles delay"
+msgstr "Αύξηση καθυστέρησης υποτίτλων"
+
+#: subtitles.py:411
+msgid "decrease subtitles delay"
+msgstr "Μείωση καθυστέρηση υποτίτλων"
+
+#: subtitles.py:415
+msgid "reset subtitles delay/fps"
+msgstr "Επαναφορά καθυστέρησης/fps υποτίτλων"
+
+#: subtitles.py:416 subtitlesdvb.py:287
+msgid "change subtitles fps"
+msgstr "Αλλαγή fps υποτίτλων"
+
+#: subtitles.py:420
+msgid "displays this menu"
+msgstr "Εμφανίζει αυτό το μενού"
+
+#: subtitles.py:421
+msgid "exit"
+msgstr "Έξοδος"
+
+#: subtitles.py:448 subtitles.py:451 subtitles.py:453 subtitlesdvb.py:268 subtitlesdvb.py:432 subtitlesdvb.py:437 subtitlesdvb.py:439
+#: subtitlesdvb.py:441 subtitlesdvb.py:445 subtitlesdvb.py:447 subtitlesdvb.py:449
+msgid "Subtitles FPS"
+msgstr "FPS υποτίτλων"
+
+#: subtitles.py:448 subtitles.py:3678 subtitlesdvb.py:432 subtitlesdvb.py:459
+msgid "unknown"
+msgstr "Άγνωστο"
+
+#: subtitles.py:451 subtitlesdvb.py:437 subtitlesdvb.py:439 subtitlesdvb.py:441 subtitlesdvb.py:445
+msgid "original"
+msgstr "Αρχικό"
+
+#: subtitles.py:459 subtitles.py:461 subtitles.py:464 subtitles.py:466
+msgid "Subtitles Delay"
+msgstr "Καθυστέρηση υποτίτλων"
+
+#: subtitles.py:511
+msgid "change external subtitles status"
+msgstr "Αλλαγή κατάστασης εξωτερικών υποτίτλων"
+
+#: subtitles.py:539 subtitles.py:541
+msgid "No external subtitles are loaded"
+msgstr "Δεν έχουν φορτωθεί εξωτερικοί υπότιτλοι"
+
+#: subtitles.py:774
+msgid "show subtitles menu"
+msgstr "Εμφάνιση μενού υποτίτλων"
+
+#: subtitles.py:1071 subtitlesdvb.py:84
+msgid "Cannot load subtitles. Invalid path"
+msgstr "Δεν είναι δυνατή η φόρτωση των υποτίτλων. Η διαδρομή δεν είναι έγκυρη"
+
+#: subtitles.py:1075 subtitlesdvb.py:86
+msgid "Cannot decode subtitles. Try another encoding group"
+msgstr "Δεν είναι δυνατή η αποκωδικοποίηση των υποτίτλων. Δοκιμάστε μια άλλη ομάδα κωδικοποίησης"
+
+#: subtitles.py:1910
+msgid "Currently choosed subtitles"
+msgstr "Επιλεγμένοι υπότιτλοι"
+
+#: subtitles.py:1965
+msgid "Embedded Subtitles"
+msgstr "Ενσωματωμένοι υπότιτλοι"
+
+#: subtitles.py:1974 subtitles.py:1976
+msgid "Encoding:"
+msgstr "Κωδικοποίηση:"
+
+#: subtitles.py:1976
+msgid "cannot decode"
+msgstr "Δεν είναι δυνατή η αποκωδικοποίηση"
+
+#: subtitles.py:1978
+msgid "None"
+msgstr "Κανένα"
+
+#: subtitles.py:1983 subtitles.py:3644
+msgid "Choose subtitles"
+msgstr "Επιλογή υποτίτλων"
+
+#: subtitles.py:1985
+msgid "Search subtitles"
+msgstr "Αναζήτηση υποτίτλων"
+
+#: subtitles.py:1988
+msgid "Change encoding"
+msgstr "Αλλαγή κωδικοποίησης"
+
+#: subtitles.py:1989
+msgid "Subtitles settings"
+msgstr "Ρυθμίσεις υποτίτλων"
+
+#: subtitles.py:1991 subtitles.py:1993
+msgid "Subtitles settings (embedded)"
+msgstr "Ρυθμίσεις υποτίτλων (ενσωματωμένοι)"
+
+#: subtitles.py:1995
+msgid "Turn off subtitles"
+msgstr "Απενεργοποίηση υποτίτλων"
+
+#: subtitles.py:2085 subtitles.py:3309
+msgid "Some subtitles providers are not working"
+msgstr "Ορισμένοι πάροχοι υποτίτλων δεν λειτουργούν"
+
+#: subtitles.py:2086 subtitles.py:3310
+msgid "For more details please check search settings"
+msgstr "Για περισσότερες λεπτομέρειες, παρακαλώ ελέγξτε τις ρυθμίσεις αναζήτησης"
+
+#: subtitles.py:2088 subtitles.py:3312
+msgid "Do you want to show this message again?"
+msgstr "Θέλετε να εμφανιστεί ξανά αυτό το μήνυμα;"
+
+#: subtitles.py:2136 subtitles.py:2277
+msgid "Font type (Regular)"
+msgstr "Τύπος γραμματοσειράς (κανονική)"
+
+#: subtitles.py:2137
+msgid "Font color (Regular)"
+msgstr "Χρώμα γραμματοσειράς (κανονική)"
+
+#: subtitles.py:2138
+msgid "Font transparency (Regular)"
+msgstr "Διαφάνεια γραμματοσειράς (κανονική)"
+
+#: subtitles.py:2139 subtitles.py:2278
+msgid "Font type (Italic)"
+msgstr "Τύπος γραμματοσειράς (πλάγια γραφή)"
+
+#: subtitles.py:2140
+msgid "Font color (Italic"
+msgstr "Χρώμα γραμματοσειράς (πλάγια γραφή)"
+
+#: subtitles.py:2141
+msgid "Font transparency (Italic)"
+msgstr "Διαφάνεια γραμματοσειράς (πλάγια γραφή)"
+
+#: subtitles.py:2142 subtitles.py:2279
+msgid "Font type (Bold)"
+msgstr "Τύπος γραμματοσειράς (έντονη γραφή)"
+
+#: subtitles.py:2143
+msgid "Font color (Bold)"
+msgstr "Χρώμα γραμματοσειράς (έντονη γραφή)"
+
+#: subtitles.py:2144
+msgid "Font transparency (Bold)"
+msgstr "Διαφάνεια γραμματοσειράς (έντονη γραφή)"
+
+#: subtitles.py:2145 subtitles.py:2280
+msgid "Font size"
+msgstr "Μέγεθος γραμματοσειράς"
+
+#: subtitles.py:2146 subtitles.py:2281
+msgid "Position"
+msgstr "Θέση"
+
+#: subtitles.py:2147
+msgid "Shadow"
+msgstr "Σκιά"
+
+#: subtitles.py:2149
+msgid "Shadow type"
+msgstr "Τύπος σκιάς"
+
+#: subtitles.py:2151 subtitles.py:2283
+msgid "Shadow X-offset"
+msgstr "Οριζόντια μετατόπιση σκιάς"
+
+#: subtitles.py:2152 subtitles.py:2284
+msgid "Shadow Y-offset"
+msgstr "Κατακόρυφη μετατόπιση σκιάς"
+
+#: subtitles.py:2154
+msgid "Shadow size"
+msgstr "Μέγεθος σκιάς"
+
+#: subtitles.py:2155
+msgid "Shadow color"
+msgstr "Χρώμα σκιάς"
+
+#: subtitles.py:2156
+msgid "Background"
+msgstr "Φόντο"
+
+#: subtitles.py:2158
+msgid "Background type"
+msgstr "Τύπος φόντου"
+
+#: subtitles.py:2160
+msgid "Background X-offset"
+msgstr "Οριζόντια μετατόπιση φόντου"
+
+#: subtitles.py:2161
+msgid "Background Y-offset"
+msgstr "Κατακόρυφη μετατόπιση φόντου"
+
+#: subtitles.py:2162
+msgid "Background color"
+msgstr "Χρώμα φόντου"
+
+#: subtitles.py:2163
+msgid "Background transparency"
+msgstr "Διαφάνεια φόντου"
+
+#: subtitles.py:2164
+msgid "Background height"
+msgstr "Ύψος φόντου"
+
+#: subtitles.py:2168
+msgid "External Subtitles settings"
+msgstr "Ρυθμίσεις εξωτερικών υποτίτλων"
+
+#: subtitles.py:2202
+msgid "Subtitles setting"
+msgstr "Ρύθμιση υποτίτλων"
+
+#: subtitles.py:2208 subtitles.py:2313
+msgid "Pause video on opening subtitles menu"
+msgstr "Παύση βίντεο κατά το άνοιγμα του μενού υποτίτλων"
+
+#: subtitles.py:2211 subtitles.py:2314
+msgid "Encoding"
+msgstr "Κωδικοποίηση"
+
+#: subtitles.py:2212 subtitles.py:2315
+msgid "Settings Backup Path"
+msgstr "Διαδρομή αντιγράφου ασφαλείας ρυθμίσεων"
+
+#: subtitles.py:2213 subtitles.py:2316
+msgid "Settings TMDB data Path"
+msgstr "Ρύθμιση διαδρομής δεδομένων TMDB"
+
+#: subtitles.py:2214
+msgid "Show expert settings"
+msgstr "Εμφάνιση εξειδικευμένων ρυθμίσεων"
+
+#: subtitles.py:2217
+msgid "Hide delay"
+msgstr "Απόκρυψη καθυστέρησης"
+
+#: subtitles.py:2218
+msgid "Sync delay"
+msgstr "Καθυστέρηση συγχρονισμού"
+
+#: subtitles.py:2219
+msgid "Player delay"
+msgstr "Καθυστέρηση προγράμματος αναπαραγωγής"
+
+#: subtitles.py:2220
+msgid "Refresh delay"
+msgstr "Ανανέωση καθυστέρησης"
+
+#: subtitles.py:2221
+msgid "PTS check delay"
+msgstr "Καθυστέρηση ελέγχου PTS"
+
+#: subtitles.py:2282
+msgid "Color"
+msgstr "Χρώμα"
+
+#: subtitles.py:2469
+msgid "Choose from embedded subtitles"
+msgstr "Επιλογή από ενσωματωμένους υπότιτλους"
+
+#: subtitles.py:2474
+msgid "Choose from downloaded subtitles"
+msgstr "Επιλογή από ληφθέντες υπότιτλους"
+
+#: subtitles.py:2479
+msgid "Choose from web subtitles"
+msgstr "Επιλογή από υπότιτλους στο διαδίκτυο"
+
+#: subtitles.py:2484
+msgid "Search on TMDB"
+msgstr "Αναζήτηση στο TMDB"
+
+#: subtitles.py:2569 subtitles.py:3078 subtitles.py:4593
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#: subtitles.py:2570
+msgid "Select"
+msgstr "Επιλογή"
+
+#: subtitles.py:2571
+msgid "Details"
+msgstr "Λεπτομέρειες"
+
+#: subtitles.py:2572
+msgid "Download Images"
+msgstr "Λήψη εικόνων"
+
+#: subtitles.py:2607
+#, python-format
+msgid "No results found for: %s"
+msgstr "Δεν βρέθηκαν αποτελέσματα για: %s"
+
+#: subtitles.py:2612
+#, python-format
+msgid "Error searching TMDB: %s"
+msgstr "Σφάλμα κατά την αναζήτηση στο TMDB: %s"
+
+#: subtitles.py:2774
+msgid "Could not determine search title."
+msgstr "Δεν ήταν δυνατό να καθοριστεί ο τίτλος αναζήτησης."
+
+#: subtitles.py:2801
+msgid "Starting background tasks for details scraping and image download..."
+msgstr "Έναρξη εργασιών παρασκηνίου για συλλογή λεπτομερειών και λήψη εικόνων..."
+
+#: subtitles.py:2878 subtitles.py:2926
+#, python-format
+msgid "Error loading details: %s"
+msgstr "Σφάλμα κατά τη φόρτωση λεπτομερειών: %s"
+
+#: subtitles.py:2890
+msgid "Could not retrieve details for this movie."
+msgstr "Δεν ήταν δυνατή η ανάκτηση λεπτομερειών για αυτήν την ταινία."
+
+#: subtitles.py:2892
+#, python-format
+msgid "Error retrieving details: %s"
+msgstr "Σφάλμα κατά την ανάκτηση λεπτομερειών: %s"
+
+#: subtitles.py:2894
+msgid "No URL available for this movie."
+msgstr "Δεν υπάρχει διαθέσιμο URL για αυτήν την ταινία."
+
+#: subtitles.py:2921
+msgid "Downloading images in background..."
+msgstr "Λήψη εικόνων στο παρασκήνιο..."
+
+#: subtitles.py:2924
+msgid "Cannot determine year for image folder."
+msgstr "Δεν είναι δυνατό να καθοριστεί το έτος για τον φάκελο εικόνων."
+
+#: subtitles.py:2928
+msgid "No details available for this movie. Please view details first."
+msgstr "Δεν υπάρχουν διαθέσιμες λεπτομέρειες για αυτήν την ταινία. Παρακαλώ δείτε πρώτα τις λεπτομέρειες."
+
+#: subtitles.py:3093
+msgid "No tagline available"
+msgstr "Δεν υπάρχει διαθέσιμο σλόγκαν"
+
+#: subtitles.py:3097
+msgid "Rating: "
+msgstr "Βαθμολογία: "
+
+#: subtitles.py:3101
+msgid "Runtime: "
+msgstr "Διάρκεια: "
+
+#: subtitles.py:3105
+msgid "Adult Content: "
+msgstr "Περιεχόμενο ενηλίκων: "
+
+#: subtitles.py:3105 subtitles.py:6259
+msgid "Yes"
+msgstr "Ναι"
+
+#: subtitles.py:3105 subtitles.py:6259
+msgid "No"
+msgstr "Όχι"
+
+#: subtitles.py:3109
+msgid "No genres available"
+msgstr "Δεν υπάρχουν διαθέσιμα είδη"
+
+#: subtitles.py:3110
+msgid "Genres: "
+msgstr "Είδη: "
+
+#: subtitles.py:3179 subtitles.py:5186
+msgid "Subtitles will be downloaded in"
+msgstr "Οι υπότιτλοι θα ληφθούν στο"
+
+#: subtitles.py:3179 subtitles.py:5186
+msgid "seconds"
+msgstr "δευτερόλεπτα"
+
+#: subtitles.py:3245
+msgid "Choose Subtitles"
+msgstr "Επιλογή υποτίτλων"
+
+#: subtitles.py:3425
+msgid "Name"
+msgstr "Όνομα"
+
+#: subtitles.py:3427
+msgid "Download date"
+msgstr "Ημερ/νία λήψης"
+
+#: subtitles.py:3430
+msgid "Remove (file)"
+msgstr "Αφαίρεση (αρχείο)"
+
+#: subtitles.py:3431 subtitles.py:4801 subtitles.py:4957
+msgid "Settings"
+msgstr "Ρυθμίσεις"
+
+#: subtitles.py:3467
+msgid "Downloaded Subtitles"
+msgstr "Ληφθέντες υπότιτλοι"
+
+#: subtitles.py:3496
+msgid "Entries count:"
+msgstr "Αριθμός καταχωρήσεων:"
+
+#: subtitles.py:3500
+msgid "Remove Entry (List+File)"
+msgstr "Αφαίρεση (Λίστα+Αρχείο)"
+
+#: subtitles.py:3502
+msgid "Remove Entry (List)"
+msgstr "Αφαίρεση (Λίστα)"
+
+#: subtitles.py:3512
+msgid "There was an error while removing subtitle, please check log"
+msgstr "Παρουσιάστηκε σφάλμα κατά την αφαίρεση του υπότιτλου, παρακαλώ ελέγξτε το αρχείο καταγραφής"
+
+#: subtitles.py:3530 subtitles.py:3537
+msgid "Subtitle"
+msgstr "Ο υπότιτλος"
+
+#: subtitles.py:3530
+msgid "will be removed from file system"
+msgstr "θα αφαιρεθεί από το σύστημα αρχείων"
+
+#: subtitles.py:3531 subtitles.py:3538
+msgid "Do you want to proceed?"
+msgstr "Θέλετε να προχωρήσετε;"
+
+#: subtitles.py:3537
+msgid "will be removed from list"
+msgstr "θα αφαιρεθεί από τη λίστα"
+
+#: subtitles.py:3574
+msgid "Downloaded Subtitles - Settings"
+msgstr "Ληφθέντες υπότιτλοι - Ρυθμίσεις"
+
+#: subtitles.py:3579
+msgid "Max history entries"
+msgstr "Μέγιστες καταχωρήσεις ιστορικού"
+
+#: subtitles.py:3580
+msgid "Remove action"
+msgstr "Ενέργεια αφαίρεσης"
+
+#: subtitles.py:3581
+msgid "Ask on remove action"
+msgstr "Ερώτηση σχετικά με την ενέργεια αφαίρεσης"
+
+#: subtitles.py:3587
+msgid "Select Directory"
+msgstr "Επιλογή καταλόγου"
+
+#: subtitles.py:4041
+msgid "Suggestions"
+msgstr "Προτάσεις"
+
+#: subtitles.py:4041
+msgid "press green"
+msgstr "Πατήστε πράσινο"
+
+#: subtitles.py:4048 subtitles.py:4800 subtitles.py:4956
+msgid "History"
+msgstr "Ιστορικό"
+
+#: subtitles.py:4048
+msgid "press red"
+msgstr "Πατήστε κόκκινο"
+
+#: subtitles.py:4369 subtitles.py:4398
+msgid "Save to"
+msgstr "Αποθήκευση σε"
+
+#: subtitles.py:4370 subtitles.py:4399
+msgid "Save as"
+msgstr "Αποθήκευση ως"
+
+#: subtitles.py:4371 subtitles.py:4401
+msgid "Append language to filename"
+msgstr "Προσθήκη γλώσσας στο όνομα αρχείου"
+
+#: subtitles.py:4379
+msgid "Filename"
+msgstr "Όνομα αρχείου"
+
+#: subtitles.py:4380
+msgid "Path"
+msgstr "Διαδρομή"
+
+#: subtitles.py:4381 subtitles.py:6185
+msgid "Reset"
+msgstr "Επαναφορά"
+
+#: subtitles.py:4405
+msgid "Download options"
+msgstr "Επιλογές λήψης"
+
+#: subtitles.py:4442
+msgid "Edit Filename"
+msgstr "Επεξεργασία ονόματος αρχείου"
+
+#: subtitles.py:4450
+msgid "Edit download path"
+msgstr "Επεξεργασία διαδρομής λήψης"
+
+#: subtitles.py:4455
+msgid "Filename cannot be empty!"
+msgstr "Το όνομα αρχείου δεν μπορεί να είναι κενό!"
+
+#: subtitles.py:4459
+msgid "Path doesn't exist!"
+msgstr "Η διαδρομή δεν υπάρχει!"
+
+#: subtitles.py:4591
+msgid "SubsSupport Log"
+msgstr "Καταγραφή SubsSupport"
+
+#: subtitles.py:4624
+msgid "No SubsSeeker info found in log"
+msgstr "Δεν βρέθηκαν πληροφορίες SubsSeeker στο αρχείο καταγραφής"
+
+#: subtitles.py:4626
+msgid "Log file not found"
+msgstr "Το αρχείο καταγραφής δεν βρέθηκε"
+
+#: subtitles.py:4628
+msgid "Error reading log:"
+msgstr "Σφάλμα ανάγνωσης αρχείου καταγραφής:"
+
+#: subtitles.py:4794
+msgid "S"
+msgstr "Προτ."
+
+#: subtitles.py:4798 subtitles.py:4954
 msgid "Update"
 msgstr "Ενημέρωση"
 
-msgid "Update Search params"
-msgstr "Ενημέρωση παραμέτρων αναζήτησης"
+#: subtitles.py:4799 subtitles.py:4955
+msgid "Search"
+msgstr "Αναζήτηση"
 
+#: subtitles.py:4887
+msgid "Subtitles search"
+msgstr "Αναζήτηση υποτίτλων"
+
+#: subtitles.py:4906
+msgid "yes"
+msgstr "Ναι"
+
+#: subtitles.py:4906
+msgid "no"
+msgstr "Όχι"
+
+#: subtitles.py:4907 subtitles.py:6005
+msgid "Title"
+msgstr "Τίτλος"
+
+#: subtitles.py:4908 subtitles.py:6006
+msgid "Type"
+msgstr "Τύπος"
+
+#: subtitles.py:4910 subtitles.py:6008
+msgid "Year"
+msgstr "Έτος"
+
+#: subtitles.py:4912 subtitles.py:6010
+msgid "Season"
+msgstr "Σεζόν"
+
+#: subtitles.py:4913 subtitles.py:6011
+msgid "Episode"
+msgstr "Επεισόδιο"
+
+#: subtitles.py:4915
+msgid "Preferred languages"
+msgstr "Προτιμώμενες γλώσσες"
+
+#: subtitles.py:4916 subtitles.py:6013
+msgid "Use File path"
+msgstr "Χρήση διαδρομής αρχείου"
+
+#: subtitles.py:5026
 msgid ""
 "Update search parameters if not correct\n"
 " and press green button for search"
@@ -568,224 +915,463 @@ msgstr ""
 "Ενημερώστε τις παραμέτρους αναζήτησης εάν δεν είναι σωστές\n"
 "και πατήστε το πράσινο κουμπί για αναζήτηση"
 
-msgid "Use File path"
-msgstr "Χρήση διαδρομής αρχείου"
+#: subtitles.py:5035 subtitles.py:5072
+msgid "loading subtitles list"
+msgstr "Φόρτωση λίστας υποτίτλων"
 
-msgid "User defined"
-msgstr "Καθορισμένο από τον χρήστη"
+#: subtitles.py:5036 subtitles.py:5073
+msgid "subtitles found"
+msgstr "Υπότιτλοι που βρέθηκαν"
 
+#: subtitles.py:5037 subtitles.py:5074
+msgid "Press OK to Stop"
+msgstr "Πατήστε OK για διακοπή"
+
+#: subtitles.py:5106
+msgid "No subtitles found :("
+msgstr "Δεν βρέθηκαν υπότιτλοι :("
+
+#: subtitles.py:5107
+msgid "Try update(simplify) search expression and try again.."
+msgstr "Προσπαθήστε να ενημερώσετε (απλοποιήσετε) την έκφραση αναζήτησης και δοκιμάστε ξανά."
+
+#: subtitles.py:5151
+msgid "downloading subtitles..."
+msgstr "Γίνεται λήψη υποτίτλων..."
+
+#: subtitles.py:5174
+msgid ""
+"There are more subtitles in unpacked archive\n"
+" please select which one do you want to use"
+msgstr ""
+"Υπάρχουν περισσότεροι υπότιτλοι στο αποσυμπιεσμένο αρχείο\n"
+"Παρακαλώ επιλέξτε ποιον θέλετε να χρησιμοποιήσετε"
+
+#: subtitles.py:5179
+msgid ""
+"Subtitles with this name already exist\n"
+"Do you want to overwrite them"
+msgstr ""
+"Υπότιτλοι με αυτό το όνομα υπάρχουν ήδη\n"
+"Θέλετε να τους αντικαταστήσετε"
+
+#: subtitles.py:5231
+msgid "Cannot save download history, for details look in log"
+msgstr "Δεν είναι δυνατή η αποθήκευση του ιστορικού λήψεων, για λεπτομέρειες ανατρέξτε στο αρχείο καταγραφής"
+
+#: subtitles.py:5250
+msgid "captcha doesn't match, try again..."
+msgstr "Το captcha δεν ταιριάζει, προσπαθήστε ξανά..."
+
+#: subtitles.py:5252
+msgid "invalid credentials provided, correct them and try again"
+msgstr "Δεν παρέχονται έγκυρα διαπιστευτήρια, διορθώστε τα και προσπαθήστε ξανά"
+
+#: subtitles.py:5254
+msgid "no credentials provided, set them and try again"
+msgstr "Δεν παρέχονται διαπιστευτήρια, ορίστε τα και προσπαθήστε ξανά"
+
+#: subtitles.py:5256
+msgid "download error ocurred, for details see /tmp/subssearch.log"
+msgstr "Συνέβη σφάλμα λήψης, για λεπτομέρειες δείτε /tmp/subssearch.log"
+
+#: subtitles.py:5276
+msgid "Download (user defined)"
+msgstr "Λήψη (καθορισμένο από τον χρήστη)"
+
+#: subtitles.py:5277
+msgid "Download (next to video)"
+msgstr "Λήψη (μαζί με το βίντεο)"
+
+#: subtitles.py:5278
+msgid "Download (more...)"
+msgstr "Λήψη (περισσότερα...)"
+
+#: subtitles.py:5281
+msgid "Download and Load (user defined) "
+msgstr "Λήψη και φόρτωση (καθορισμένο από τον χρήστη)"
+
+#: subtitles.py:5282
+msgid "Download and Load (next to video)"
+msgstr "Λήψη και φόρτωση (μαζί με το βίντεο)"
+
+#: subtitles.py:5283
+msgid "Download and Load (more...)"
+msgstr "Λήψη και φόρτωση (περισσότερα...)"
+
+#: subtitles.py:5588 subtitles.py:5589 subtitles.py:5590
+msgid "Preferred subtitles language"
+msgstr "Προτιμώμενη γλώσσα υποτίτλων"
+
+#: subtitles.py:5591
+msgid "Preferred Movie provider"
+msgstr "Προτιμώμενος πάροχος ταινιών"
+
+#: subtitles.py:5592
+msgid "Preferred TV show provider"
+msgstr "Προτιμώμενος πάροχος τηλεοπτικών σειρών"
+
+#: subtitles.py:5593
+msgid "Manual search"
+msgstr "Χειροκίνητη αναζήτηση"
+
+#: subtitles.py:5594
+msgid "Subtitles provider timeout"
+msgstr "Χρονικό όριο παροχής υποτίτλων"
+
+#: subtitles.py:5595
+msgid "Check search parameters before subtitles search"
+msgstr "Έλεγχος παραμέτρων αναζήτησης πριν την αναζήτηση υποτίτλων"
+
+#: subtitles.py:5596
+msgid "Sort subtitles list by"
+msgstr "Ταξινόμηση λίστας υποτίτλων κατά"
+
+#: subtitles.py:5597
+msgid "Save subtitles as"
+msgstr "Αποθήκευση υποτίτλων ως"
+
+#: subtitles.py:5598
+msgid "Save subtitles as (fallback)"
+msgstr "Αποθήκευση υποτίτλων ως (εναλλακτικά)"
+
+#: subtitles.py:5599
+msgid "Add subtitle's language to filename"
+msgstr "Προσθήκη γλώσσας υποτίτλου στο όνομα αρχείου"
+
+#: subtitles.py:5600
+msgid "Save subtitles to"
+msgstr "Αποθήκευση υποτίτλων σε"
+
+#: subtitles.py:5601
+msgid "Subtitles download path"
+msgstr "Διαδρομή λήψης υποτίτλων"
+
+#: subtitles.py:5602
+msgid "Subtitles temp path"
+msgstr "Προσωρινή διαδρομή υπότιτλων"
+
+#: subtitles.py:5603
+msgid "Always ask before overwriting existing subtitles"
+msgstr "Ερώτηση πριν την αντικατάσταση των υπαρχόντων υποτίτλων"
+
+#: subtitles.py:5604
+msgid "Load subtitles after download"
+msgstr "Φόρτωση υποτίτλων μετά τη λήψη"
+
+#: subtitles.py:5606
+msgid "Save downloaded subtitles to history"
+msgstr "Αποθήκευση ληφθέντων υποτίτλων στο ιστορικό"
+
+#: subtitles.py:5608
+msgid "Load/Save download history directory"
+msgstr "Κατάλογος φόρτωσης/αποθήκευσης ιστορικού λήψεων"
+
+#: subtitles.py:5691
+msgid "Provider name"
+msgstr "Όνομα παρόχου"
+
+#: subtitles.py:5692
+msgid "Supported languages"
+msgstr "Υποστηριζόμενες γλώσσες"
+
+#: subtitles.py:5693
+msgid "State"
+msgstr "Κατάστ."
+
+#: subtitles.py:5697
+msgid "Switch List"
+msgstr "Εναλλαγή λιστών"
+
+#: subtitles.py:5718
+msgid "Subtitles search settings"
+msgstr "Ρυθμίσεις αναζήτησης υποτίτλων"
+
+#: subtitles.py:5729
+msgid "error"
+msgstr "Σφάλμα"
+
+#: subtitles.py:5732
+msgid "enabled"
+msgstr "Ενεργό"
+
+#: subtitles.py:5735
+msgid "disabled"
+msgstr "Ανενεργό"
+
+#: subtitles.py:5857
+msgid "missing"
+msgstr "Λείπει"
+
+#: subtitles.py:5857
+msgid "library"
+msgstr "Βιβλιοθήκη"
+
+#: subtitles.py:5932
+msgid "Source title not provided"
+msgstr "Δεν παρέχεται τίτλος προέλευσης"
+
+#: subtitles.py:5934 subtitles.py:6031
+msgid "Source title"
+msgstr "Τίτλος προέλευσης"
+
+#: subtitles.py:6001
+msgid "Update Search params"
+msgstr "Ενημέρωση παραμέτρων αναζήτησης"
+
+#: subtitles.py:6172
+msgid "settings"
+msgstr "Ρυθμίσεις"
+
+#: subtitles.py:6200
+msgid "Test"
+msgstr "Δοκιμή"
+
+#: subtitles.py:6225
+msgid "Testing credentials..."
+msgstr "Γίνεται έλεγχος διαπιστευτηρίων..."
+
+#: subtitles.py:6256
+msgid "Login successful!"
+msgstr "Η σύνδεση ήταν επιτυχής!"
+
+#: subtitles.py:6257
+#, python-format
+msgid "User ID: %s"
+msgstr "ID χρήστη: %s"
+
+#: subtitles.py:6258
+#, python-format
+msgid "Level: %s"
+msgstr "Επίπεδο: %s"
+
+#: subtitles.py:6259
+#, python-format
+msgid "VIP: %s"
+msgstr "VIP: %s"
+
+#: subtitles.py:6260
+#, python-format
+msgid "Downloads left: %s"
+msgstr "Απομένουν λήψεις: %s"
+
+#: subtitles.py:6261
+#, python-format
+msgid "Translations left: %s"
+msgstr "Απομένουν μεταφράσεις: %s"
+
+#: subtitles.py:6269
+#, python-format
+msgid "Error: %s"
+msgstr "Σφάλμα: %s"
+
+#: subtitles.py:6280
+msgid "Settings reset to defaults"
+msgstr "Επαναφορά των ρυθμίσεων στις προεπιλογές"
+
+#: subtitles.py:6299
+msgid "Credentials backed up to:"
+msgstr "Τα διαπιστευτήρια αποθηκεύτηκαν στο αντίγραφο ασφαλείας:"
+
+#: subtitles.py:6306
+msgid "Backup failed:"
+msgstr "Η δημιουργία αντιγράφων ασφαλείας απέτυχε:"
+
+#: subtitles.py:6316
+msgid "No backup file found"
+msgstr "Δεν βρέθηκε αρχείο αντιγράφου ασφαλείας"
+
+#: subtitles.py:6381
+msgid "No compatible settings found in backup"
+msgstr "Δεν βρέθηκαν συμβατές ρυθμίσεις στο αντίγραφο ασφαλείας"
+
+#: subtitles.py:6392
+msgid "Successfully restored:"
+msgstr "Επαναφορά με επιτυχία:"
+
+#: subtitles.py:6406
+msgid "Restore error:"
+msgstr "Σφάλμα επαναφοράς:"
+
+#: subtitlesdvb.py:45
+msgid "Auto sync to current event"
+msgstr "Αυτόματος συγχρονισμός με τον τρέχον πρόγραμμα"
+
+#: subtitlesdvb.py:88
+msgid "Cannot parse subtitles. Not supported subtitles format"
+msgstr "Δεν είναι δυνατή η ανάλυση των υποτίτλων. Δεν υποστηρίζεται η μορφή υποτίτλων"
+
+#: subtitlesdvb.py:90
+msgid "Cannot parse subtitles. Invalid subtitles format"
+msgstr "Δεν είναι δυνατή η ανάλυση των υποτίτλων. Η μορφή υποτίτλων δεν είναι έγκυρη"
+
+#: subtitlesdvb.py:266 subtitlesdvb.py:412
+msgid "Subtitles Position"
+msgstr "Θέση υποτίτλων"
+
+#: subtitlesdvb.py:267 subtitlesdvb.py:426
+msgid "Subtitles Time"
+msgstr "Χρόνος υποτίτλων"
+
+#: subtitlesdvb.py:269
+msgid "Event Name"
+msgstr "Όνομα προγράμματος"
+
+#: subtitlesdvb.py:270 subtitlesdvb.py:465
+msgid "Event Time"
+msgstr "Χρόνος προγράμματος"
+
+#: subtitlesdvb.py:271 subtitlesdvb.py:478
+msgid "Event Duration"
+msgstr "Διάρκεια προγράμματος"
+
+#: subtitlesdvb.py:274
+msgid "close plugin"
+msgstr "Κλείσιμο πρόσθετου"
+
+#: subtitlesdvb.py:275
+msgid "show/hide subtitles status"
+msgstr "Εμφάνιση/απόκρυψη κατάστασης υποτίτλων"
+
+#: subtitlesdvb.py:276
+msgid "play/pause subtitles playback"
+msgstr "Αναπαραγωγή/παύση αναπαραγωγής υποτίτλων"
+
+#: subtitlesdvb.py:277
+msgid "pause subtitles playback"
+msgstr "Παύση αναπαραγωγής υποτίτλων"
+
+#: subtitlesdvb.py:278
+msgid "resumes subtitles playback"
+msgstr "Συνεχίζει την αναπαραγωγή υποτίτλων"
+
+#: subtitlesdvb.py:279
+msgid "restarts current subtitle"
+msgstr "Επανεκκινεί τον τρέχοντα υπότιτλο"
+
+#: subtitlesdvb.py:280
+msgid "skip to next subtitle"
+msgstr "Μετάβαση στον επόμενο υπότιτλο"
+
+#: subtitlesdvb.py:281
+msgid "skip to next subtitle (minute jump)"
+msgstr "Μετάβαση στον επόμενο υπότιτλο (άλμα σε λεπτά)"
+
+#: subtitlesdvb.py:282
+msgid "skip to next subtitle by setting time in minutes"
+msgstr "Μετάβαση στον επόμενο υπότιτλο με ρύθμιση χρόνου σε λεπτά"
+
+#: subtitlesdvb.py:283
+msgid "skip to previous subtitle"
+msgstr "Μετάβαση στον προηγούμενο υπότιτλο"
+
+#: subtitlesdvb.py:284
+msgid "skip to previous subtitle (minute jump)"
+msgstr "Μετάβαση στον προηγούμενο υπότιτλο (άλμα σε λεπτά)"
+
+#: subtitlesdvb.py:285
+msgid "skip previous subtitle by setting time in minutes"
+msgstr "Μετάβαση προηγούμενο υπότιτλο με ρύθμιση χρόνου σε λεπτά"
+
+#: subtitlesdvb.py:286
+msgid "skip subtitle to current event position"
+msgstr "Μετάβαση υποτίτλου στη θέση του τρέχοντος προγράμματος"
+
+#: subtitlesdvb.py:288
+msgid "open Subtitle Picker"
+msgstr "Άνοιγμα επιλογέα υποτίτλων"
+
+#: subtitlesdvb.py:289
+msgid "apply Saved Delay"
+msgstr "Εφαρμογή αποθηκευμένης καθυστέρησης"
+
+#: subtitlesdvb.py:290
+msgid "save current delay for this channel"
+msgstr "Αποθήκευση τρέχουσας καθυστέρησης για αυτό το κανάλι"
+
+#: subtitlesdvb.py:463
+msgid "Time"
+msgstr "Χρόνος"
+
+#: subtitlesdvb.py:476
+msgid "Duration"
+msgstr "Διάρκεια"
+
+#: subtitlesdvb.py:515
+msgid "cannot sync to event, event is not available"
+msgstr "Δεν είναι δυνατός ο συγχρονισμός με το πρόγραμμα. Το πρόγραμμα δεν είναι διαθέσιμο"
+
+#: subtitlesdvb.py:590
+msgid "Cannot save delay β€“ event information unavailable"
+msgstr "Δεν είναι δυνατή η αποθήκευση καθυστέρησης - οι πληροφορίες του προγράμματος δεν είναι διαθέσιμες"
+
+#: subtitlesdvb.py:608
+#, python-format
+msgid "Delay of %.2fβ€―s saved for this channel"
+msgstr "Η καθυστέρηση %.2f δευτ. αποθηκεύτηκε για αυτό το κανάλι"
+
+#: xbmc_subtitles.py:156
+msgid "Search Path"
+msgstr "Διαδρομή αναζήτησης"
+
+#: xbmc_subtitles.py:247
+msgid "Username and password are required"
+msgstr "Απαιτείται όνομα χρήστη και κωδικός πρόσβασης"
+
+#: xbmc_subtitles.py:265 xbmc_subtitles.py:369 xbmc_subtitles.py:373
+#, python-format
+msgid "API error: %s"
+msgstr "Σφάλμα API: %s"
+
+#: xbmc_subtitles.py:295
+msgid "OpenSubtitles.com requires username and password"
+msgstr "Το OpenSubtitles.com απαιτεί όνομα χρήστη και κωδικό πρόσβασης"
+
+#: xbmc_subtitles.py:315 xbmc_subtitles.py:458 xbmc_subtitles.py:640
 msgid "Username"
 msgstr "Όνομα χρήστη"
 
-msgid "Video filename"
-msgstr "Όνομα αρχείου βίντεο"
+#: xbmc_subtitles.py:316 xbmc_subtitles.py:459 xbmc_subtitles.py:641
+msgid "Password"
+msgstr "Κωδικός πρόσβασης"
+
+#: xbmc_subtitles.py:317
+msgid "Send and search movie hashes"
+msgstr "Αποστολή και αναζήτηση hashes ταινιών"
+
+#: xbmc_subtitles.py:353
+msgid "API key is required"
+msgstr "Απαιτείται κλειδί API"
+
+#: xbmc_subtitles.py:371
+msgid "Subdl API key is valid and working"
+msgstr "Το κλειδί API του Subdl είναι έγκυρο και λειτουργεί"
+
+#: xbmc_subtitles.py:402
+msgid "Subdl.com requires an API key"
+msgstr "Το Subdl.com απαιτεί ένα κλειδί API"
+
+#: xbmc_subtitles.py:458 xbmc_subtitles.py:459
+msgid "Restart e2 required"
+msgstr "Απαιτείται επανεκκίνηση του e2"
+
+msgid "Central and Eastern Europe"
+msgstr "Κεντρικής και Ανατολικής Ευρώπης"
 
 msgid "Western Europe"
 msgstr "Δυτικής Ευρώπης"
 
-msgid "Year"
-msgstr "Έτος"
+msgid "Russia"
+msgstr "Ρωσικά"
 
-msgid "Please change embedded subtitles settings in Settings / System / Subtitles settings"
-msgstr "Παρακαλώ αλλάξτε τις ρυθμίσεις των ενσωματωμένων υποτίτλων στις Ρυθμίσεις / Σύστημα / Ρυθμίσεις υποτίτλων"
+msgid "Arabic"
+msgstr "Αραβικά"
 
-msgid "black"
-msgstr "Μαύρο"
+msgid "Turkish"
+msgstr "Τουρκικά"
 
-msgid "blue"
-msgstr "Μπλε"
+msgid "Greek"
+msgstr "Ελληνικά"
 
-msgid "border"
-msgstr "Περίγραμμα"
-
-msgid "bottom"
-msgstr "Κάτω"
-
-msgid "cannot decode"
-msgstr "Δεν είναι δυνατή η αποκωδικοποίηση"
-
-msgid "cannot sync to event, event is not available"
-msgstr "Δεν είναι δυνατός ο συγχρονισμός με το πρόγραμμα. Το πρόγραμμα δεν είναι διαθέσιμο"
-
-msgid "captcha doesn't match, try again..."
-msgstr "Το captcha δεν ταιριάζει, προσπαθήστε ξανά..."
-
-msgid "change external subtitles status"
-msgstr "Αλλαγή κατάστασης εξωτερικών υποτίτλων"
-
-msgid "change subtitles fps"
-msgstr "Αλλαγή fps υποτίτλων"
-
-msgid "close plugin"
-msgstr "Κλείσιμο πρόσθετου"
-
-msgid "decrease subtitles delay"
-msgstr "Μείωση καθυστέρηση υποτίτλων"
-
-msgid "disabled"
-msgstr "Ανενεργό"
-
-msgid "displays this menu"
-msgstr "Εμφανίζει αυτό το μενού"
-
-msgid "downloading subtitles..."
-msgstr "Γίνεται λήψη υποτίτλων..."
-
-msgid "dynamic"
-msgstr "Δυναμικό"
-
-msgid "enabled"
-msgstr "Ενεργό"
-
-msgid "error"
-msgstr "Σφάλμα"
-
-msgid "exit"
-msgstr "Έξοδος"
-
-msgid "green"
-msgstr "Πράσινο"
-
-msgid "grey"
-msgstr "Γκρι"
-
-msgid "increase subtitles delay"
-msgstr "Αύξηση καθυστέρησης υποτίτλων"
-
-msgid "invalid credentials provided, correct them and try again"
-msgstr "Δεν παρέχονται έγκυρα διαπιστευτήρια, διορθώστε τα και προσπαθήστε ξανά"
-
-msgid "jump to next subtitle"
-msgstr "Μετάβαση στον επόμενο υπότιτλο"
-
-msgid "jump to previous subtitle"
-msgstr "Μετάβαση στον προηγούμενο υπότιτλο"
-
-msgid "library"
-msgstr "Βιβλιοθήκη"
-
-msgid "loading subtitles list"
-msgstr "Φόρτωση λίστας υποτίτλων"
-
-msgid "missing"
-msgstr "Λείπει"
-
-msgid "no"
-msgstr "Όχι"
-
-msgid "no credentials provided, set them and try again"
-msgstr "Δεν παρέχονται διαπιστευτήρια, ορίστε τα και προσπαθήστε ξανά"
-
-msgid "nothing connected"
-msgstr "Δεν έχει συνδεθεί τίποτα"
-
-msgid "offset"
-msgstr "Μετατόπιση"
-
-msgid "opaque"
-msgstr "Αδιαφανής"
-
-msgid "original"
-msgstr "Αρχικό"
-
-msgid "pause subtitles playback"
-msgstr "Παύση αναπαραγωγής υποτίτλων"
-
-msgid "play/pause subtitles playback"
-msgstr "Αναπαραγωγή/παύση αναπαραγωγής υποτίτλων"
-
-msgid "press green"
-msgstr "Πατήστε πράσινο"
-
-msgid "press red"
-msgstr "Πατήστε κόκκινο"
-
-msgid "purple"
-msgstr "Μωβ"
-
-msgid "red"
-msgstr "Κόκκινο"
-
-msgid "reset subtitles delay/fps"
-msgstr "Επαναφορά καθυστέρησης/fps υποτίτλων"
-
-msgid "restarts current subtitle"
-msgstr "Επανεκκινεί τον τρέχοντα υπότιτλο"
-
-msgid "resumes subtitles playback"
-msgstr "Συνεχίζει την αναπαραγωγή υποτίτλων"
-
-msgid "seconds"
-msgstr "δευτερόλεπτα"
-
-msgid "settings"
-msgstr "Ρυθμίσεις"
-
-msgid "show subtitles menu"
-msgstr "Εμφάνιση μενού υποτίτλων"
-
-msgid "show/hide subtitles status"
-msgstr "Εμφάνιση/απόκρυψη κατάστασης υποτίτλων"
-
-msgid "skip previous subtitle by setting time in minutes"
-msgstr "Παράλειψη προηγούμενου υποτίτλου ορίζοντας τον χρόνο σε λεπτά"
-
-msgid "skip subtitle to current event position"
-msgstr "Μετάβαση υποτίτλων στη τρέχουσα θέση προγράμματος"
-
-msgid "skip to next subtitle"
-msgstr "Μετάβαση στον επόμενο υπότιτλο"
-
-msgid "skip to next subtitle (minute jump)"
-msgstr "Μετάβαση στον επόμενο υπότιτλο (άλμα ανά λεπτό)"
-
-msgid "skip to next subtitle by setting time in minutes"
-msgstr "Μετάβαση στον επόμενο υπότιτλο ορίζοντας τον χρόνο σε λεπτά"
-
-msgid "skip to previous subtitle"
-msgstr "Μετάβαση στον προηγούμενο υπότιτλο"
-
-msgid "skip to previous subtitle (minute jump)"
-msgstr "Μετάβαση στον προηγούμενο υπότιτλο (άλμα ανά λεπτό)"
-
-msgid "static"
-msgstr "Στατικό"
-
-msgid "subtitles found"
-msgstr "Υπότιτλοι που βρέθηκαν"
-
-msgid "top"
-msgstr "Επάνω"
-
-msgid "transparent"
-msgstr "Διαφανής"
-
-msgid "unknown"
-msgstr "Άγνωστο"
-
-msgid "unpack error: cannot get subname"
-msgstr "Σφάλμα αποσυσκευασίας: Δεν είναι δυνατή η λήψη δευτερεύοντος ονόματος"
-
-msgid "unpack error: cannot open archive"
-msgstr "Σφάλμα αποσυσκευασίας: Δεν είναι δυνατό το άνοιγμα του αρχείου"
-
-msgid "unsupported archive %s"
-msgstr "Μη υποστηριζόμενο αρχείο %s"
-
-msgid "watch DVB broadcast with subtitles"
-msgstr "Παρακολούθηση μετάδοσης DVB με υπότιτλους"
-
-msgid "white"
-msgstr "Λευκό"
-
-msgid "will be removed from file system"
-msgstr "θα αφαιρεθεί από το σύστημα αρχείων"
-
-msgid "will be removed from list"
-msgstr "θα αφαιρεθεί από τη λίστα"
-
-msgid "yellow"
-msgstr "Κίτρινο"
-
-msgid "yes"
-msgstr "Ναι"
+msgid "Hebrew"
+msgstr "Εβραϊκά"
