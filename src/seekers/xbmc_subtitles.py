@@ -183,8 +183,6 @@ class Sub_Scene_comSeeker(XBMCSubtitlesAdapter):
     supported_langs = allLang()
     default_settings = {}
 
-
-
 try:
     from .Subsource import subsource
 except ImportError as e:
@@ -197,7 +195,69 @@ class SubsourceSeeker(XBMCSubtitlesAdapter):
         error, module = module, None
     provider_name = 'Subsource'
     supported_langs = allLang()
-    default_settings = {}
+    default_settings = {
+        'SubSource_API_KEY': {'label': "API_KEY", 'type': 'text', 'default': '', 'pos': 2}
+    }
+
+    def test_credentials(self):
+        """Test SubSource API key"""
+        from twisted.internet import defer, threads
+        import requests
+
+        def _api_test():
+            api_key = self.settings_provider.getSetting("SubSource_API_KEY")
+            
+            if not api_key:
+                raise Exception(_("API key is required"))
+
+            url = "https://api.subsource.net/api/v1/movies/78044"
+            headers = {"X-API-Key": api_key}
+
+            try:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+                
+                if not data.get('success'):
+                    raise Exception(_("API error: %s") % data.get('message', 'Unknown error'))
+                
+                return _("SubSource API key is valid and working")
+            except Exception as e:
+                raise Exception(_("API error"))
+
+        deferred = defer.Deferred()
+        d = threads.deferToThread(_api_test)
+        d.addCallback(deferred.callback)
+        d.addErrback(deferred.errback)
+        return deferred
+
+    def show_message(self, session, message, is_error=False):
+        """Universal message display method"""
+        from Screens.MessageBox import MessageBox
+        try:
+            session.open(
+                MessageBox,
+                message,
+                MessageBox.TYPE_ERROR if is_error else MessageBox.TYPE_INFO,
+                timeout=10
+            )
+        except Exception as e:
+            print("Failed to show message:", str(e))
+
+    def _search(self, title, filepath, langs, season, episode, tvshow, year):
+        """Override search to include API key check"""
+        api_key = self.settings_provider.getSetting("SubSource_API_KEY")
+        
+        if not api_key:
+            return {
+                'list': [],
+                'session_id': "",
+                'msg': _("SubSource_API_KEY requires an API key")
+            }
+            
+        return super(SubsourceSeeker, self)._search(
+            title, filepath, langs, season, episode, tvshow, year
+        )
 
 try:
     from .Foursub import foursub
@@ -405,8 +465,6 @@ class SubdlSeeker(XBMCSubtitlesAdapter):
         return super(SubdlSeeker, self)._search(
             title, filepath, langs, season, episode, tvshow, year
         )
-
-
 
 try:
     from .Novalermora import novalermora
