@@ -151,7 +151,6 @@ class SubtitlePicker(Screen):
         if 0 <= index < len(self.subsList):
             self.close(index)  # ✅ Closes picker and returns selected index
 
-
     def updateSubtitleList(self):
         """ Update subtitle list with separate columns for caption number, timestamp, and text """
         menuItems = []
@@ -162,6 +161,10 @@ class SubtitlePicker(Screen):
             
             # Handle multi-line subtitle text
             subtitle_text = sub['text'].strip()
+            
+            # Clean RTL markers for display in the picker (keep them for actual playback)
+            # Remove RTL/LTR control characters that might show as strange symbols
+            subtitle_text = self.clean_display_text(subtitle_text)
             
             # If text contains newlines, split and process each line
             if '\n' in subtitle_text:
@@ -189,7 +192,24 @@ class SubtitlePicker(Screen):
         self["subList"].l.setList(menuItems)
         self["subList"].l.invalidate()
 
-    
+    def clean_display_text(self, text):
+        """Remove RTL/LTR control characters for display in the picker"""
+        # Remove common bidirectional control characters that might display as strange symbols
+        control_chars = [
+            '\u202B',  # RTL embedding
+            '\u202C',  # Pop directional formatting
+            '\u202A',  # LTR embedding
+            '\u202D',  # LTR override
+            '\u202E',  # RTL override
+            '\u200F',  # RTL mark
+            '\u200E',  # LTR mark
+        ]
+        
+        for char in control_chars:
+            text = text.replace(char, '')
+        
+        return text.strip()
+
     def setInitialSelection(self):
         """ ✅ Ensure the picker opens on the currently playing subtitle """
         if 0 <= self.currentIndex < len(self.subsList):

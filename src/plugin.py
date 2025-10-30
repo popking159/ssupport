@@ -26,7 +26,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-VER = "1.8.0.02"
+VER = "1.8.0.03"
 log = logging.getLogger("SubsSupport")
 
 def openSubtitlesSearch(session, **kwargs):
