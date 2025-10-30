@@ -1,2 +1,2 @@
-version='1.8.0.02'
-description='NEW: Fix crash on openbh and openvix on selecting movie using new tmdb feature . \n1- Add support for searching for subtitles using the help of tmdb to identify the correct movie. \n2- Saving movie details and poster , logo , background and cast in internal path or predefined path. \n3- Add movie poster in subsearch screen. \n4- You can see movie information with images support using yellow button .\n5- Before performing new search , it checks for similar search data and if found , it will use the saved data so saving time and bandwidth for another search .\n6- It is better to predefine tmdb data path from General Settings to save all data on external disk .\n7- Notice that some data needs to modify your skin if it is already support SubsSupport plugin.'
+version='1.8.0.03'
+description='1- Fix SubSource provider by adding new API system. \n2- Fix showing strange character at the beginning and at the end of the played subtitle line .'
