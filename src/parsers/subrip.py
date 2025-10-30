@@ -21,10 +21,15 @@ class SubRipParser(BaseParser):
             line = re.sub('<[^>]*>', '', line)
             # Remove SSA/ASS positioning tags like {\an8}
             line = re.sub(r'\{.*?\}', '', line)
+            # Remove any remaining control characters
+            line = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', line)
+            # Trim whitespace
+            line = line.strip()
             cleaned_lines.append(line)
         
         # Join back with newlines to preserve the multi-line structure
-        return '\n'.join(cleaned_lines)
+        # Filter out empty lines
+        return '\n'.join(filter(None, cleaned_lines))
 
     def _getColor(self, text, color):
         newColor = color
