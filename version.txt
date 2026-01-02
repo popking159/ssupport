@@ -1,2 +1,2 @@
-version='1.8.0.03'
-description='1- Fix SubSource provider by adding new API system. \n2- Fix showing strange character at the beginning and at the end of the played subtitle line .'
+version='1.8.0.04'
+description='* add support for ass/ssa file , it is important is anime subtitles. \n* fix downloading subtitles that contain "/" .\n* if the downloaded file contains more than one subtitle file , choice box will open to allow selecting the wanted file , it is important in tvshow complete season subtitle , previously the last file was automatically selected . - Tested in subdl and subsource .'
