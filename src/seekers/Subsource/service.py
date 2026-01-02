@@ -26,7 +26,7 @@ __api = "https://api.subsource.net/api/v1"
 __search = __api + "/movies/search"
 __getSub = __api + "/subtitles"
 
-def get_subsource_api():
+def getsubsourceapi():
     global settings_provider  # Ensure we're using the existing instance
     API_KEY = settings_provider.getSetting("SubSource_API_KEY")
     if API_KEY:
@@ -68,7 +68,7 @@ def search_subtitles(file_original_path, title, tvshow, year, season, episode, s
 
 def getSearchTitle(title, year=None):
     url = __search
-    API_KEY = get_subsource_api()
+    API_KEY = getsubsourceapi()
     headers = {"X-API-Key": API_KEY}
     name = prepare_search_string(title)
     params1 = {"searchType": "text", "q": name, "type": "all"}
@@ -122,7 +122,7 @@ def search_movie(title, year, languages, filename):
 
         # Get list of candidate movies (each with movieId)
         movie_candidates = getSearchTitle(movie_title, year)
-        print(("movie_candidates", movie_candidates))
+        #print(("movie_candidates", movie_candidates))
         if not movie_candidates:
             print("❌ No movie found for this title")
             return []
@@ -143,7 +143,7 @@ def search_movie(title, year, languages, filename):
         languages_param = ",".join(unique_langs)
         limit = 100
 
-        API_KEY = get_subsource_api()
+        API_KEY = getsubsourceapi()
         headers = {"X-API-Key": API_KEY}
 
         subtitles = []
@@ -157,7 +157,7 @@ def search_movie(title, year, languages, filename):
             if not movie_id:
                 continue
 
-            print(("🔍 Searching subtitles for movieId:", movie_id, "title:", movie_name))
+            #print(("🔍 Searching subtitles for movieId:", movie_id, "title:", movie_name))
 
             params2 = {
                 "movieId": movie_id,
@@ -209,7 +209,7 @@ def search_movie(title, year, languages, filename):
 
 def getSearchTvshow(tvshow_title, year=None, season=None, episode=None):
     url = __search
-    API_KEY = get_subsource_api()
+    API_KEY = getsubsourceapi()
     name = prepare_search_string(tvshow_title)
     params1 = {"searchType": "text", "q": name, "type": "tvseries"}
     if year:
@@ -285,7 +285,7 @@ def search_tvshow(tvshow, year, season, episode, languages, filename):
         languages_param = ",".join(unique_langs)
         limit = 100
 
-        API_KEY = get_subsource_api()
+        API_KEY = getsubsourceapi()
         headers = {"X-API-Key": API_KEY}
 
         subtitles = []
@@ -299,7 +299,7 @@ def search_tvshow(tvshow, year, season, episode, languages, filename):
             if not movie_id:
                 continue
 
-            print(("🔍 Searching subtitles for movieId:", movie_id, "tvshow:", movie_name))
+            #print(("🔍 Searching subtitles for movieId:", movie_id, "tvshow:", movie_name))
 
             params2 = {
                 "movieId": movie_id,
@@ -342,7 +342,7 @@ def search_tvshow(tvshow, year, season, episode, languages, filename):
                 print(("❌ Error fetching subtitles for tvshow with movieId %s:" % movie_id, str(e)))
                 continue
 
-        print(("✅ Total subtitles found:", len(subtitles)))
+        #print(("✅ Total subtitles found:", len(subtitles)))
         return subtitles
 
     except Exception as error:
@@ -350,58 +350,59 @@ def search_tvshow(tvshow, year, season, episode, languages, filename):
         return []
 
 def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, session_id):
-    """
-    Compatible with SubsSupport expected behavior.
-    Returns: (success, language, compressed_type)
-    """
     try:
         sub_id = subtitles_list[pos].get("sub_id")
-        language = subtitles_list[pos].get("language_name", "Unknown")
+        language = subtitles_list[pos].get("languagename", "Unknown")
+
         if not sub_id:
             print("[SubsourceSeeker][error] Missing subtitle ID")
             return False, language, ""
 
-        # ✅ Use the same name that SubsSupport passes in 'zip_subs'
-        local_tmp_file = os.path.join(tmp_sub_dir, zip_subs)
+        # zip_subs can be "/var/volatile/tmp/<release>" (passed from xbmc_subtitles.py)
+        base = os.path.basename(str(zip_subs))
+
+        # sanitize filename only (keep tmp_sub_dir clean)
+        safe = re.sub(r"[\\\\/]+", "_", base)
+        safe = safe.replace("..", ".").strip("._ ")
+
         if not os.path.exists(tmp_sub_dir):
             os.makedirs(tmp_sub_dir)
 
-        API_KEY = get_subsource_api()
-        headers = {"X-API-Key": API_KEY}
+        localtmpfile = os.path.join(tmp_sub_dir, safe)
+
+        APIKEY = getsubsourceapi()
+        headers = {"X-API-Key": APIKEY}
 
         __getSubdown = __getSub + "/" + str(sub_id) + "/download"
         print("⬇️ Download URL:", __getSubdown)
 
-        # Compatible request
         response = requests.get(__getSubdown, headers=headers, verify=False, allow_redirects=True, timeout=30)
         if response.status_code != 200:
-            print("❌ HTTP Error (download):", response.status_code, response.text)
+            print("❌ HTTP Error download:", response.status_code, response.text)
             return False, language, ""
 
-        # ✅ Save directly to expected file path (zip_subs)
-        with open(local_tmp_file, "wb") as f:
+        with open(localtmpfile, "wb") as f:
             f.write(response.content)
 
-        print("✅ Subtitle downloaded successfully:", local_tmp_file)
+        print("✅ Subtitle downloaded successfully:", localtmpfile)
 
-        # Detect file type
-        with open(local_tmp_file, "rb") as myfile:
+        with open(localtmpfile, "rb") as myfile:
             header = myfile.read(4)
-            try:
-                header = header.decode("latin-1")
-            except Exception:
-                # Python 2 compatibility
-                pass
+        try:
+            header = header.decode("latin-1")
+        except Exception:
+            pass
 
-            if header.startswith("Rar!"):
-                compressed_type = "rar"
-            elif header.startswith("PK"):
-                compressed_type = "zip"
-            else:
-                compressed_type = local_tmp_file  # unknown raw file
+        if header.startswith("Rar!"):
+            compressed = "rar"
+        elif header.startswith("PK"):
+            compressed = "zip"
+        else:
+            compressed = False
 
-        return True, language, compressed_type
+        # IMPORTANT: third value MUST be filepath (what seek.py will open/unpack)
+        return compressed, language, localtmpfile
 
     except Exception as e:
-        print("[SubsourceSeeker][error] download_subtitles exception:", e)
+        print("[SubsourceSeeker][error] downloadsubtitles exception:", e)
         return False, "", ""
