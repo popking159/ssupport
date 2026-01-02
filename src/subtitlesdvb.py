@@ -99,14 +99,15 @@ class SubsSupportDVB(object):
     def subsControllerCB(self):
         self.session.deleteDialog(self.subsScreen)
 
-
-
 class SubtitlePicker(Screen):
     skin = """
-        <screen name="SubtitlePicker" position="center,center" size="900,800" title="Select Current Subtitle Line">
-            <widget name="subList" position="10,10" size="880,720" scrollbarMode="showOnDemand" halign="left" />
-            <eLabel position="10,740" size="200,40" font="Regular; 30" foregroundColor="#FF0000" backgroundColor="#000000" text="Cancel" />
-            <eLabel position="225,740" size="200,40" font="Regular; 30" foregroundColor="#00FF00" backgroundColor="#000000" text="Select" />
+        <screen name="SubtitlePicker" position="center,center" size="900,820" title="Select Current Subtitle Line">
+            <widget name="subList" position="10,40" size="880,720" scrollbarMode="showOnDemand" halign="left" />
+                        <eLabel position="20,10" size="80,30" font="Regular;24" foregroundColor="#FFFFFF" backgroundColor="#000000" text="No." />
+            <eLabel position="90,10" size="200,30" font="Regular;24" foregroundColor="#FFFFFF" backgroundColor="#000000" text="Time" />
+            <eLabel position="310,10" size="560,30" font="Regular;24" foregroundColor="#FFFFFF" backgroundColor="#000000" text="Subtitle" />
+            <eLabel position="10,770" size="200,40" font="Regular; 30" foregroundColor="#FF0000" backgroundColor="#000000" text="Cancel" />
+            <eLabel position="225,770" size="200,40" font="Regular; 30" foregroundColor="#00FF00" backgroundColor="#000000" text="Select" />
         </screen>
     """
 
@@ -152,43 +153,57 @@ class SubtitlePicker(Screen):
             self.close(index)  # ✅ Closes picker and returns selected index
 
     def updateSubtitleList(self):
-        """ Update subtitle list with separate columns for caption number, timestamp, and text """
+        """Update subtitle list with separate columns for caption number, timestamp, and text"""
         menuItems = []
 
+        # Default item height
+        defaultHeight = 40
+
         for sub in self.subsList:
-            cap_number = f"{sub['index'] + 1}" 
-            time_stamp = self.format_time(sub['start'])  
-            
-            # Handle multi-line subtitle text
-            subtitle_text = sub['text'].strip()
-            
-            # Clean RTL markers for display in the picker (keep them for actual playback)
-            # Remove RTL/LTR control characters that might show as strange symbols
+            # Safely compute caption number
+            try:
+                cap_number = "%d" % (int(sub.get('index', 0)) + 1)
+            except Exception:
+                cap_number = "?"
+
+            # Convert start time to a human‑readable timestamp
+            time_stamp = self.format_time(sub.get('start', 0))
+
+            # Handle multi‑line subtitle text
+            subtitle_text = (sub.get('text') or "").strip()
             subtitle_text = self.clean_display_text(subtitle_text)
-            
-            # If text contains newlines, split and process each line
-            if '\n' in subtitle_text:
-                lines = subtitle_text.split('\n')
-                # Create a multi-line entry
-                item = [
-                    MultiContentEntryText(pos=(10, 5), size=(80, 30), font=0, text=cap_number, flags=RT_HALIGN_LEFT),
-                    MultiContentEntryText(pos=(80, 5), size=(200, 30), font=0, text=time_stamp, flags=RT_HALIGN_LEFT),
-                    MultiContentEntryText(pos=(300, 5), size=(600, 60), font=0, text="\n".join(lines), flags=RT_HALIGN_LEFT)
-                ]
-                # Increase item height for multi-line content
-                self["subList"].l.setItemHeight(60)
+
+            # Decide whether we have multi‑line text
+            if "\n" in subtitle_text:
+                lines = subtitle_text.split("\n")
+                text_for_list = "\n".join(lines)
+                item_height = 60
             else:
-                # Single line entry
-                item = [
-                    MultiContentEntryText(pos=(10, 5), size=(80, 30), font=0, text=cap_number, flags=RT_HALIGN_LEFT),
-                    MultiContentEntryText(pos=(80, 5), size=(200, 30), font=0, text=time_stamp, flags=RT_HALIGN_LEFT),
-                    MultiContentEntryText(pos=(300, 5), size=(600, 30), font=0, text=subtitle_text, flags=RT_HALIGN_LEFT)
-                ]
-                # Reset to default height for single line
-                self["subList"].l.setItemHeight(40)
+                text_for_list = subtitle_text
+                item_height = defaultHeight
+
+            # Build eListboxPythonMultiContent entry
+            # FIRST element must be the data object (here: the original subtitle dict)
+            item = [
+                sub,
+                MultiContentEntryText(
+                    pos=(10, 5), size=(80, 30), font=0,
+                    text=cap_number, flags=RT_HALIGN_LEFT
+                ),
+                MultiContentEntryText(
+                    pos=(80, 5), size=(200, 30), font=0,
+                    text=time_stamp, flags=RT_HALIGN_LEFT
+                ),
+                MultiContentEntryText(
+                    pos=(300, 5), size=(600, item_height - 5), font=0,
+                    text=text_for_list, flags=RT_HALIGN_LEFT
+                ),
+            ]
 
             menuItems.append(item)
 
+        # Apply the proper item height (use the last computed, or default)
+        self["subList"].l.setItemHeight(item_height if menuItems else defaultHeight)
         self["subList"].l.setList(menuItems)
         self["subList"].l.invalidate()
 
@@ -229,7 +244,6 @@ class SubtitlePicker(Screen):
         index = self["subList"].getSelectedIndex()
         if 0 <= index < len(self.subsList):
             self.close(index)
-
 
 class SubsControllerDVB(Screen, HelpableScreen):
     fpsChoices = ["23.976", "23.980", "24.000", "25.000", "29.970", "30.000"]

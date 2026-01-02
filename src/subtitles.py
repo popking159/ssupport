@@ -76,7 +76,7 @@ from .e2_utils import (
     Captcha, DelayMessageBox, MyConfigList, getFps, fps_float, getFonts,
     BaseMenuScreen, isFullHD, isHD, getDesktopSize
 )
-from .parsers import SubRipParser, MicroDVDParser
+from .parsers import SubRipParser, MicroDVDParser, AssParser
 from .process import SubsLoader, DecodeError, ParseError, ParserNotFoundError, LoadError
 from .searchsubs import Messages
 from .seek import SubsSeeker, SubtitlesDownloadError, SubtitlesErrors
@@ -130,7 +130,7 @@ ENCODINGS = {("Central and Eastern Europe"): CENTRAL_EASTERN_EUROPE_ENCODINGS,
             ("Greek"): GREEK_ENCODINGS,
             ("Hebrew"): HEBREW_ENCODINGS}
 
-PARSERS = [SubRipParser, MicroDVDParser]
+PARSERS = (SubRipParser, MicroDVDParser, AssParser)
 
 
 def getDefaultFont(fontType):
@@ -1063,6 +1063,20 @@ class SubsSupport(SubsSupportEmbedded):
             self.setSeekState(InfoBarSeek.SEEK_STATE_PLAY)
 
     def __processSubs(self, subsPath, subsEnc):
+        # Convert ASS/SSA -> SRT before the normal loader runs
+        # if subsPath and subsPath.lower().endswith((".ass", ".ssa")):
+            # try:
+                # from .parsers.ass2srt import Ass2srt
+            # except (ValueError, ImportError):
+                # from parsers.ass2srt import Ass2srt
+
+            # base = os.path.splitext(os.path.basename(subsPath))[0]
+            # srtPath = os.path.join("/tmp", base + ".srt")
+
+            # conv = Ass2srt(subsPath)
+            # conv.to_srt(name=srtPath)
+            # subsPath = srtPath
+
         showMessages = self.__showGUIInfoMessages and not (self.__firstStart and self.__subclassOfScreen)
         try:
             return self.__subsLoader.load(subsPath, subsEnc, getFps(self.session))
@@ -2355,7 +2369,14 @@ class SubFileList(FileList):
         extensions = []
         for parser in PARSERS:
             extensions += list(parser.parsing)
-        FileList.__init__(self, defaultDir, matchingPattern="(?i)^.*\." + '(' + '|'.join(ext[1:] for ext in extensions) + ')', useServiceRef=False)
+
+        # show ASS/SSA in file chooser
+        #extensions += ['.ass', '.ssa']
+
+        FileList.__init__(self, defaultDir,
+            matchingPattern="(?i)^.*\\.(%s)" % "|".join([ext[1:] for ext in extensions]),
+            useServiceRef=False
+        )
         self.l.setFont(0, gFont("Regular", 18))
         self.l.setFont(1, gFont("Regular", 29))
         if isFullHD():
@@ -3852,20 +3873,35 @@ class SubsSearchProcess(object):
 
     def handleMessage(self, data):
         self.log.debug('handleMessage "%s"', data)
+
+        def _unwrap(value):
+            # searchsubs.py sends callback params as *args -> packed into a 1-item list/tuple
+            # Example for chooseFileCB: value == [subFiles]
+            if isinstance(value, (list, tuple)) and len(value) == 1:
+                return value[0]
+            return value
+
         if data['message'] == Messages.MESSAGE_UPDATE_CALLBACK:
             self.callbacks['updateCB'](data['value'])
+
         if data['message'] == Messages.MESSAGE_OVERWRITE_CALLBACK:
-            self.callbacks['overwriteCB'](data['value'], self.write)
+            self.callbacks['overwriteCB'](_unwrap(data['value']), self.write)
+
         if data['message'] == Messages.MESSAGE_CHOOSE_FILE_CALLBACK:
-            self.callbacks['choosefileCB'](data['value'], self.write)
+            self.callbacks['choosefileCB'](_unwrap(data['value']), self.write)
+
         if data['message'] == Messages.MESSAGE_CAPTCHA_CALLBACK:
-            self.callbacks['captchaCB'](data['value'], self.write)
+            self.callbacks['captchaCB'](_unwrap(data['value']), self.write)
+
         if data['message'] == Messages.MESSAGE_DELAY_CALLBACK:
-            self.callbacks['delayCB'](data['value'], self.write)
+            self.callbacks['delayCB'](_unwrap(data['value']), self.write)
+
         if data['message'] == Messages.MESSAGE_FINISHED_SCRIPT:
             self.callbacks['successCB'](data['value'])
+
         if data['message'] == Messages.MESSAGE_CANCELLED_SCRIPT:
             print('script successfully cancelled')
+
         if data['message'] == Messages.MESSAGE_ERROR_SCRIPT:
             self.callbacks['errorCB'](data['value'])
 
@@ -4720,8 +4756,8 @@ class SubsSupportLogScreen(Screen):
 class SubsSearch(Screen):
     if isFullHD():
         skin = """
-        <screen name="SubsSearch" position="center,center" size="1350,780" zPosition="3" >
-            <widget source="search_info" render="Listbox" position="15,15" size="1320,225" zPosition="3" scrollbarMode="showNever"  transparent="1" >
+        <screen name="SubsSearch" position="center,center" size="1350,780" zPosition="3">
+            <widget source="search_info" render="Listbox" position="15,15" size="1148,225" zPosition="3" scrollbarMode="showNever" transparent="1">
                 <convert type="TemplatedMultiContent">
                     {"templates":
                         {"default": (33, [
@@ -4734,14 +4770,14 @@ class SubsSearch(Screen):
                     }
                 </convert>
             </widget>
-            <widget source="header_country" render="Label" position = "7,262" size="180,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
-            <widget source="header_release" render="Label" position = "217,262" size="802,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
-            <widget source="header_provider" render="Label" position = "1057,262" size="202,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
-            <widget source="header_sync" render="Label" position = "1275,262" size="30,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
+            <widget source="header_country" render="Label" position="7,262" size="180,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
+            <widget source="header_release" render="Label" position="217,262" size="802,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
+            <widget source="header_provider" render="Label" position="1057,262" size="202,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
+            <widget source="header_sync" render="Label" position="1275,262" size="30,37" font="Regular;27" halign="left" foregroundColor="#0xcccccc" />
             <eLabel position="7,307" size="1335,1" backgroundColor="#999999" />
-            <widget name="loadmessage"  position="7,315" size="1335,390" valign="center" halign="center" font="Regular;28" foregroundColor="#ffffff" zPosition="4" />
+            <widget name="loadmessage" position="7,315" size="1335,390" valign="center" halign="center" font="Regular;28" foregroundColor="#ffffff" zPosition="4" />
             <widget name="errormessage" position="7,315" size="1335,390" valign="center" halign="center" font="Regular;28" foregroundColor="#ff0000" zPosition="5" />
-            <widget source="subtitles" render="Listbox" scrollbarMode="showOnDemand" position="7,315" size="1335,390" zPosition="3" transparent="1" >
+            <widget source="subtitles" render="Listbox" scrollbarMode="showOnDemand" position="7,315" size="1335,390" zPosition="3" transparent="1">
                 <convert type="TemplatedMultiContent">
                     {"templates":
                         {"default": (34, [
@@ -4758,19 +4794,19 @@ class SubsSearch(Screen):
                 </convert>
             </widget>
             <eLabel position="7,712" size="1335,1" backgroundColor="#999999" />
-            <widget source="key_menu_img" render="Pixmap" pixmap="skin_default/buttons/key_menu.png" position="10,727" size="35,25" transparent="1" alphatest="on" >
+            <widget source="key_menu_img" render="Pixmap" pixmap="skin_default/buttons/key_menu.png" position="10,727" size="35,25" transparent="1" alphatest="on">
                 <convert type="ConditionalShowHide" />
             </widget>
-            <ePixmap  pixmap="skin_default/buttons/key_red.png" position="50,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_red" render="Label" position = "93,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <ePixmap pixmap="skin_default/buttons/key_red.png" position="50,727" size="35,25" transparent="1" alphatest="on" />
+            <widget source="key_red" render="Label" position="93,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_green.png" position="371,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_green" render="Label" position = "414,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <widget source="key_green" render="Label" position="414,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_yellow.png" position="692,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_yellow" render="Label" position = "735,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <widget source="key_yellow" render="Label" position="735,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
             <ePixmap pixmap="skin_default/buttons/key_blue.png" position="1013,727" size="35,25" transparent="1" alphatest="on" />
-            <widget source="key_blue" render="Label" position = "1056,722" size="268,37" font="Regular;30" halign="left" foregroundColor="white" />
-            <ePixmap pixmap="skin_default/buttons/key_info.png" position="1360,727" size="35,25" transparent="1" alphatest="on" />
-            <widget name="poster" position="570,10" size="120,180" zPosition="2" />
+            <widget source="key_blue" render="Label" position="1056,722" size="230,37" font="Regular;30" halign="left" foregroundColor="white" />
+            <ePixmap pixmap="skin_default/buttons/key_info.png" position="1300,727" size="35,25" transparent="1" alphatest="on" />
+            <widget name="poster" position="1190,32" size="120,180" zPosition="2" />
         </screen>
         """
     else:
@@ -5246,9 +5282,17 @@ class SubsSearch(Screen):
         }
 
         def choosefileCB(subFiles, resultCB):
-            choiceTitle = _("There are more subtitles in unpacked archive\n please select which one do you want to use")
+            choiceTitle = "There are more subtitles in unpacked archive please select which one do you want to use"
             choiceList = [(os.path.basename(subfile), subfile) for subfile in subFiles]
-            self.session.openWithCallback(resultCB, ChoiceBox, choiceTitle, choiceList)
+
+            def _selected(choice):
+                # ChoiceBox returns: (display, value) or None
+                if choice is None:
+                    resultCB(None)
+                else:
+                    resultCB(choice[1])  # send ONLY the filepath (string) back to searchsubs.py
+
+            self.session.openWithCallback(_selected, ChoiceBox, choiceTitle, choiceList)
 
         def overwriteCB(subfile, resultCB):
             overwriteText = _("Subtitles with this name already exist\nDo you want to overwrite them") + "?"

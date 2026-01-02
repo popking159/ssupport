@@ -25,6 +25,11 @@ import time
 import traceback
 import zipfile
 import re
+try:
+    from .parsers.ass2srt import Ass2srt
+except (ValueError, ImportError):
+    from parsers.ass2srt import Ass2srt
+
 
 try:
     from .seekers import SubtitlesDownloadError, SubtitlesSearchError, \
@@ -89,7 +94,7 @@ class ErrorSeeker(BaseSeeker):
 
 
 class SubsSeeker(object):
-    SUBTILES_EXTENSIONS = ['.srt', '.sub']
+    SUBTILES_EXTENSIONS = ['.srt', '.sub', '.ass']
 
     def __init__(self, download_path, tmp_path, captcha_cb, delay_cb, message_cb, settings=None, settings_provider_cls=None, settings_provider_args=None, debug=False, providers=None):
         self.log = SimpleLogger(self.__class__.__name__, log_level=debug and SimpleLogger.LOG_DEBUG or SimpleLogger.LOG_INFO)
@@ -220,6 +225,8 @@ class SubsSeeker(object):
         if seeker is None:
             self.log.error('provider for "%s" subtitle was not found', selected_subtitle['filename'])
         lang, filepath = seeker.download(subtitles_dict[provider_id], selected_subtitle)[1:3]
+        if not filepath or not os.path.isfile(filepath):
+            raise SubtitlesDownloadError("download failed (invalid temp file path): %s" % toString(filepath))
         compressed = getCompressedFileType(filepath)
         if compressed:
             subfiles = self._unpack_subtitles(filepath, self.tmp_path)
@@ -240,6 +247,12 @@ class SubsSeeker(object):
                 return
             self.log.debug('selected subtitle: "%s"', subfile)
         ext = os.path.splitext(subfile)[1]
+        # if ext == '.ass':
+            # conv = Ass2srt(subfile)
+            # srt_path = conv.output_name()       # same base name, .srt
+            # conv.to_srt(name=srt_path)          # write .srt
+            # subfile = srt_path
+            # ext = '.srt'
         if ext not in self.SUBTILES_EXTENSIONS:
             ext = os.path.splitext(toString(selected_subtitle['filename']))[1]
             if ext not in self.SUBTILES_EXTENSIONS:
@@ -366,18 +379,32 @@ class SubsSeeker(object):
         subfiles = filter(lambda x: os.path.splitext(x)[1] in self.SUBTILES_EXTENSIONS, subfiles)
         return subfiles
 
-    def _unpack_zipsub(self, zip_path, dest_dir):
-        zf = zipfile.ZipFile(zip_path)
+    def _unpack_zipsub(self, zippath, destdir):
+        zf = zipfile.ZipFile(zippath)
         namelist = zf.namelist()
+
         subsfiles = []
+        allowed_exts = self.SUBTILES_EXTENSIONS + ['.rar', '.zip']
+
         for subsfn in namelist:
-            if os.path.splitext(subsfn)[1] in self.SUBTILES_EXTENSIONS + ['.rar', '.zip']:
-                filename = os.path.basename(subsfn)
-                outfile = open(os.path.join(dest_dir, filename), 'wb')
+            # Skip directories (zip entries ending with "/")
+            if subsfn.endswith('/'):
+                continue
+
+            ext = os.path.splitext(subsfn)[1].lower()
+            if ext not in allowed_exts:
+                continue
+
+            # Keep path info to avoid overwriting (episode folders, etc.)
+            safe_name = subsfn.replace('\\', '/').strip('/').replace('/', '_')
+            outpath = os.path.join(destdir, safe_name)
+
+            with open(outpath, "wb") as outfile:
                 outfile.write(zf.read(subsfn))
-                outfile.flush()
-                outfile.close()
-                subsfiles.append(os.path.join(dest_dir, filename))
+
+            subsfiles.append(outpath)
+
+        subsfiles.sort()
         return subsfiles
 
     def _unpack_rarsub(self, rar_path, dest_dir):
