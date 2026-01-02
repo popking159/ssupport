@@ -4,7 +4,7 @@ Created on Feb 10, 2014
 @author: marko
 '''
 from __future__ import absolute_import
-import os
+import os, re
 import json
 import time
 import six
@@ -23,11 +23,6 @@ class XBMCSubtitlesAdapter(BaseSeeker):
         self.module.captcha_cb = captcha_cb
         self.module.delay_cb = delay_cb
         self.module.message_cb = message_cb
-        # xbmc-subtitles module can use maximum of three different languages
-        # we will fill default languages from supported langs  in case no languages
-        # were provided. If provider has more than 3 supported languages this just
-        # gets first three languages in supported_langs list, so most of the time its
-        # best to pass languages which will be used for searching
         if len(self.supported_langs) == 1:
             self.lang1 = self.lang2 = self.lang3 = languageTranslate(self.supported_langs[0], 2, 0)
         elif len(self.supported_langs) == 2:
@@ -64,11 +59,6 @@ class XBMCSubtitlesAdapter(BaseSeeker):
             lang3 = languageTranslate(langs[2], 2, 0)
         self.log.info('using langs %s %s %s' % (toString(lang1), toString(lang2), toString(lang3)))
         self.module.settings_provider = self.settings_provider
-        # Standard output -
-        # subtitles list
-        # session id (e.g a cookie string, passed on to download_subtitles),
-        # message to print back to the user
-        # return subtitlesList, "", msg
         subtitles_list, session_id, msg = self.module.search_subtitles(file_original_path, title, tvshow, year, season, episode, set_temp=False, rar=False, lang1=lang1, lang2=lang2, lang3=lang3, stack=None)
         return {'list': subtitles_list, 'session_id': session_id, 'msg': msg}
 
@@ -83,11 +73,6 @@ class XBMCSubtitlesAdapter(BaseSeeker):
         else:
             sub_folder = toString(self.tmp_path)
         self.module.settings_provider = self.settings_provider
-        # Standard output -
-        # True if the file is packed as zip: addon will automatically unpack it.
-        # language of subtitles,
-        # Name of subtitles file if not packed (or if we unpacked it ourselves)
-        # return False, language, subs_file
         compressed, language, filepath = self.module.download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, session_id)
         if compressed != False:
             if compressed == True or compressed == "":
