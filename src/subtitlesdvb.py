@@ -12,7 +12,9 @@ from . import _
 from Components.ActionMap import HelpableActionMap
 from Components.Label import Label
 from Components.config import ConfigSubsection, getConfigListEntry
-from Components.config import config, ConfigOnOff, ConfigInteger   # ← ConfigInteger used when applying delay
+from Components.config import ConfigText, ConfigNothing
+from Components.config import config, ConfigOnOff, ConfigInteger, ConfigSubsection
+from Components.ConfigList import ConfigListScreen
 from Screens.HelpMenu import HelpableScreen
 from .compat import MessageBox, eConnectCallback
 from Screens.MinuteInput import MinuteInput
@@ -34,6 +36,15 @@ from Components.Sources.StaticText import StaticText
 config.plugins.subsSupport = ConfigSubsection()
 config.plugins.subsSupport.dvb = ConfigSubsection()
 config.plugins.subsSupport.dvb.autoSync = ConfigOnOff(default=True)
+config.plugins.subsSupport.dvb.fpsDriftEnable = ConfigOnOff(default=False)
+
+config.plugins.subsSupport.dvb.fpsRatio_23_976 = ConfigText(default="1.0000", fixed_size=False)
+config.plugins.subsSupport.dvb.fpsRatio_24_000 = ConfigText(default="1.0000", fixed_size=False)
+config.plugins.subsSupport.dvb.fpsRatio_25_000 = ConfigText(default="1.0000", fixed_size=False)
+config.plugins.subsSupport.dvb.fpsRatio_29_970 = ConfigText(default="1.0000", fixed_size=False)
+config.plugins.subsSupport.dvb.fpsRatio_30_000 = ConfigText(default="1.0000", fixed_size=False)
+config.plugins.subsSupport.dvb.fpsRatio_50_000 = ConfigText(default="1.0000", fixed_size=False)
+config.plugins.subsSupport.dvb.fpsRatio_59_940 = ConfigText(default="1.0000", fixed_size=False)
 
 
 class SubsSetupDVBPlayer(BaseMenuScreen):
@@ -42,8 +53,60 @@ class SubsSetupDVBPlayer(BaseMenuScreen):
         self.dvbSettings = dvbSettings
 
     def buildMenu(self):
-        self['config'].setList([getConfigListEntry(_("Auto sync to current event"), self.dvbSettings.autoSync)])
+        lst = []
+        lst.append(getConfigListEntry(_("Auto sync to current event"), self.dvbSettings.autoSync))
+        lst.append(getConfigListEntry(" ", ConfigNothing()))
 
+        lst.append(getConfigListEntry(
+            _("Try to correct FPS drift with FPS ratio"),
+            config.plugins.subsSupport.dvb.fpsDriftEnable
+        ))
+
+        if config.plugins.subsSupport.dvb.fpsDriftEnable.value:
+            lst.append(getConfigListEntry(
+                _("Subtitles late: Decrease Ratio. Subtitles rush: Increase Ratio"),
+                ConfigNothing()
+            ))
+            lst.append(getConfigListEntry(_("Override Ratio for 23.976 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_23_976))
+            lst.append(getConfigListEntry(_("Override Ratio for 24.000 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_24_000))
+            lst.append(getConfigListEntry(_("Override Ratio for 25.000 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_25_000))
+            lst.append(getConfigListEntry(_("Override Ratio for 29.970 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_29_970))
+            lst.append(getConfigListEntry(_("Override Ratio for 30.000 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_30_000))
+            lst.append(getConfigListEntry(_("Override Ratio for 50.000 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_50_000))
+            lst.append(getConfigListEntry(_("Override Ratio for 59.940 (Standard is 1.0000)"),
+                                          config.plugins.subsSupport.dvb.fpsRatio_59_940))
+
+        self["config"].setList(lst)
+
+    def _rebuildIfToggle(self):
+        cur = self["config"].getCurrent()
+        if not cur:
+            return
+        cfg = cur[1]
+        if cfg is config.plugins.subsSupport.dvb.fpsDriftEnable:
+            self.buildMenu()
+
+    def keyLeft(self):
+        ConfigListScreen.keyLeft(self)
+        self._rebuildIfToggle()
+
+    def keyRight(self):
+        ConfigListScreen.keyRight(self)
+        self._rebuildIfToggle()
+
+    def keyOK(self):
+        # some images toggle booleans on OK
+        try:
+            ConfigListScreen.keyOK(self)
+        except Exception:
+            pass
+        self._rebuildIfToggle()
 
 class SubsSupportDVB(object):
     def __init__(self, session):
@@ -322,6 +385,8 @@ class SubsControllerDVB(Screen, HelpableScreen):
             "openSubtitlePicker": (self.openSubtitlePicker, _("open Subtitle Picker")),
             "applySavedDelay": (self.applySavedDelay, _("apply Saved Delay")),
             "saveCurrentDelay": (self.saveCurrentDelay,_("save current delay for this channel")),
+            "showHelp": (self.showHelp, _("show help")),
+            "confirmClose": (self.confirmClose, _("exit (confirm)")),
         }, -1)
 
         try:
@@ -340,6 +405,40 @@ class SubsControllerDVB(Screen, HelpableScreen):
             self.onFirstExecBegin.append(self.eventSync)
         self.onClose.append(self.engine.close)
         self.onClose.append(self.delTimers)
+
+    def confirmClose(self):
+        def cb(answer):
+            if answer:
+                self.close()
+
+        self.session.openWithCallback(
+            cb,
+            MessageBox,
+            _("Exit SubsSupport DVB player?"),
+            MessageBox.TYPE_YESNO
+        )
+
+    def showHelp(self):
+        txt = "\n".join([
+            _("Controls:"),
+            "",
+            _("RED: Open Subtitle Picker"),
+            _("YELLOW: Sync subtitle to current event"),
+            _("BLUE: Change subtitles FPS"),
+            _("OK: Show/Hide status panel"),
+            _("LEFT: Previous subtitle"),
+            _("RIGHT: Next subtitle"),
+            _("UP/DOWN: Restart current subtitle"),
+            _("PREV/REWIND (short): -1 minute"),
+            _("NEXT/FF (short): +1 minute"),
+            _("PREV (long): Manual -minutes jump"),
+            _("NEXT (long): Manual +minutes jump"),
+            _("5: Apply saved delay"),
+            _("6: Save current delay for this channel"),
+            _("EXIT: Exit (confirm)"),
+            _("INFO: Show this help"),
+        ])
+        self.session.open(MessageBox, txt, MessageBox.TYPE_INFO, timeout=20)
 
     def openSubtitlePicker(self):
         #print("[DEBUG] RED button pressed - Attempting to open SubtitlePicker")
@@ -701,7 +800,9 @@ class SubsEngineDVB(object):
         else:
             self.waitTimer.stop()
             self.hideTimer.stop()
-            self.fpsRatio = subsFps / float(videoFps)
+            base = subsFps / float(videoFps)
+            override = self.getFpsDriftOverride()
+            self.fpsRatio = base * override
             self.setRefTime()                 # <‑‑ keeps timing coherent
             self.renderSub()
             if not self.paused:
@@ -728,6 +829,40 @@ class SubsEngineDVB(object):
 
     def getCurrentSub(self):
         return self.subsList[self.position]
+
+    def _safeRatio(self, cfg, default=1.0):
+        try:
+            s = str(cfg.value).strip().replace(",", ".")
+            v = float(s)
+            # optional clamp to avoid insane values
+            if v < 0.80 or v > 1.20:
+                return default
+            return v
+        except:
+            return default
+
+    def getFpsDriftOverride(self):
+        if not config.plugins.subsSupport.dvb.fpsDriftEnable.value:
+            return 1.0
+
+        videoFps = getFps(self.session, True)
+        if videoFps is None:
+            return 1.0
+
+        vf = "%.3f" % float(videoFps)
+
+        m = {
+            "23.976": config.plugins.subsSupport.dvb.fpsRatio_23_976,
+            "24.000": config.plugins.subsSupport.dvb.fpsRatio_24_000,
+            "25.000": config.plugins.subsSupport.dvb.fpsRatio_25_000,
+            "29.970": config.plugins.subsSupport.dvb.fpsRatio_29_970,
+            "30.000": config.plugins.subsSupport.dvb.fpsRatio_30_000,
+            "50.000": config.plugins.subsSupport.dvb.fpsRatio_50_000,
+            "59.940": config.plugins.subsSupport.dvb.fpsRatio_59_940,
+        }
+
+        cfg = m.get(vf)
+        return self._safeRatio(cfg, 1.0) if cfg else 1.0
 
     def setRefTime(self):
         self.reftime = time.time() * 1000
