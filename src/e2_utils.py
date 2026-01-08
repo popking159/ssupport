@@ -22,6 +22,7 @@ import os
 import shutil
 from twisted.web.client import downloadPage
 import xml.etree.cElementTree
+from xml.etree import ElementTree as ET
 
 from Components.Label import Label
 from Components.AVSwitch import AVSwitch
@@ -46,6 +47,20 @@ from .utils import toString
 
 import six
 
+_SUBSKINS_PATH = "/usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subskins.xml"
+_SUBSKINS_CACHE = None
+
+def load_subskin(skin_id, default=None):
+    global _SUBSKINS_CACHE
+    if _SUBSKINS_CACHE is None:
+        _SUBSKINS_CACHE = {}
+        if os.path.exists(_SUBSKINS_PATH):
+            root = ET.parse(_SUBSKINS_PATH).getroot()
+            for node in root.findall("skin"):
+                sid = node.get("id")
+                # text inside CDATA becomes node.text
+                _SUBSKINS_CACHE[sid] = (node.text or "").strip()
+    return _SUBSKINS_CACHE.get(skin_id, default)
 
 def getDesktopSize():
     s = getDesktop(0).size()
@@ -450,75 +465,83 @@ def getFps(session, validOnly=False):
 
 FONTS = {}
 
-
 def getFonts():
-    global FONTS
-    if len(FONTS) > 0:
-        return FONTS.keys()
-    allFonts = []
-    fontDir = eEnv.resolve("${datadir}/fonts/")
-    print('[getFonts] fontDir: %s' % fontDir)
-    for font in os.listdir(fontDir):
-        fontPath = os.path.join(fontDir, font)
-        if os.path.isdir(fontPath):
-            for f in os.listdir(fontPath):
-                if not f.endswith(".ttf"):
-                    continue
-                allFonts.append(os.path.join(fontPath, f))
-        if not fontPath.endswith(".ttf"):
-            continue
-        allFonts.append(fontPath)
-    skinFiles = ["skin_default.xml", "skin_subtitles.xml", "skin_user.xml"]
-    fonts = {}
-    for skinFile in skinFiles:
-        skinPath = resolveFilename(SCOPE_SKIN, skinFile)
-        if fileExists(skinPath):
-            try:
-                skin = xml.etree.cElementTree.parse(skinPath).getroot()
-            except Exception as e:
-                print(e)
-                continue
-            for c in skin.findall("fonts"):
-                for font in c.findall("font"):
-                    get_attr = font.attrib.get
-                    filename = get_attr("filename", "<NONAME>")
-                    name = get_attr("name", "Regular")
-                    fonts[filename] = name
-                    print('[getFonts] find font %s in %s' % (name, skinFile))
-    for fontFilepath in allFonts:
-        fontFilename = os.path.basename(fontFilepath)
-        if fontFilename not in fonts.keys():
-            fontName = os.path.splitext(fontFilename)[0]
-            addFont(fontFilepath, fontName, 100, False)
-            FONTS[fontName] = fontFilepath
-        else:
-            FONTS[fonts[fontFilename]] = fontFilename
-    if "Regular" not in FONTS:
-        FONTS["Regular"] = ""
-    return FONTS.keys()
+	global FONTS
+	if len(FONTS) > 0:
+		return FONTS.keys()
 
+	allFonts = []
+
+	# 1) System fonts (existing logic)
+	fontDir = eEnv.resolve("${datadir}/fonts/")
+	print('[getFonts] fontDir: %s' % fontDir)
+
+	if os.path.isdir(fontDir):
+		for font in os.listdir(fontDir):
+			fontPath = os.path.join(fontDir, font)
+			if os.path.isdir(fontPath):
+				for f in os.listdir(fontPath):
+					if f.lower().endswith(".ttf"):
+						allFonts.append(os.path.join(fontPath, f))
+			elif fontPath.lower().endswith(".ttf"):
+				allFonts.append(fontPath)
+
+	# 2) Plugin fonts (SubsSupport only) -> register with prefix to avoid clashes
+	pluginFontDir = "/usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/fonts/"
+	if os.path.isdir(pluginFontDir):
+		for f in os.listdir(pluginFontDir):
+			if f.lower().endswith((".ttf", ".otf")):
+				allFonts.append(os.path.join(pluginFontDir, f))
+
+	# Skin font name mapping (existing logic)
+	skinFiles = ["skin_default.xml", "skin_subtitles.xml", "skin_user.xml"]
+	fonts = {}
+	for skinFile in skinFiles:
+		skinPath = resolveFilename(SCOPE_SKIN, skinFile)
+		if fileExists(skinPath):
+			try:
+				skin = xml.etree.cElementTree.parse(skinPath).getroot()
+			except Exception as e:
+				print(e)
+				continue
+			for c in skin.findall("fonts"):
+				for font in c.findall("font"):
+					get_attr = font.attrib.get
+					filename = get_attr("filename", "")
+					name = get_attr("name", "Regular")
+					fonts[filename] = name
+					print('[getFonts] find font %s in %s' % (name, skinFile))
+
+	# Register fonts
+	for fontFilepath in allFonts:
+		fontFilename = os.path.basename(fontFilepath)
+
+		# If font comes from plugin folder -> force prefixed name
+		if fontFilepath.startswith(pluginFontDir):
+			base = os.path.splitext(fontFilename)[0]
+			fontName = "SS_" + base
+			addFont(fontFilepath, fontName, 100, False)
+			FONTS[fontName] = fontFilepath
+			continue
+
+		# Existing behavior for system fonts
+		if fontFilename not in fonts.keys():
+			fontName = os.path.splitext(fontFilename)[0]
+			addFont(fontFilepath, fontName, 100, False)
+			FONTS[fontName] = fontFilepath
+		else:
+			FONTS[fonts[fontFilename]] = fontFilename
+
+	if "Regular" not in FONTS:
+		FONTS["Regular"] = ""
+
+	return FONTS.keys()
 
 class BaseMenuScreen(Screen, ConfigListScreen):
-    if isFullHD():
-        skin = """
-                <screen position="center,center" size="915,652" >
-                    <widget name="key_red" position="15,7" zPosition="1" size="210,67" font="Regular;30" halign="center" valign="center" backgroundColor="#9f1313" shadowOffset="-2,-2" shadowColor="black" />
-                    <widget name="key_green" position="240,7" zPosition="1" size="210,67" font="Regular;30" halign="center" valign="center" backgroundColor="#1f771f" shadowOffset="-2,-2" shadowColor="black" />
-                    <widget name="key_yellow" position="465,7" zPosition="1" size="210,67" font="Regular;30" halign="center" valign="center" backgroundColor="#a08500" shadowOffset="-2,-2" shadowColor="black" />
-                    <widget name="key_blue" position="690,7" zPosition="1" size="210,67" font="Regular;30" halign="center" valign="center" backgroundColor="#18188b" shadowOffset="-2,-2" shadowColor="black" />
-                    <eLabel position="-1,83" size="918,1" backgroundColor="#999999" />
-                    <widget name="config" position="0,112" size="915,532" font="Regular;26" itemHeight="36" scrollbarMode="showOnDemand" />
-                </screen>"""
+    if isFullHD:
+        skin = load_subskin("BaseMenuScreen_fhd")
     else:
-        skin = """
-                <screen position="center,center" size="610,435" >
-                    <widget name="key_red" position="10,5" zPosition="1" size="140,45" font="Regular;20" halign="center" valign="center" backgroundColor="#9f1313" shadowOffset="-2,-2" shadowColor="black" />
-                    <widget name="key_green" position="160,5" zPosition="1" size="140,45" font="Regular;20" halign="center" valign="center" backgroundColor="#1f771f" shadowOffset="-2,-2" shadowColor="black" />
-                    <widget name="key_yellow" position="310,5" zPosition="1" size="140,45" font="Regular;20" halign="center" valign="center" backgroundColor="#a08500" shadowOffset="-2,-2" shadowColor="black" />
-                    <widget name="key_blue" position="460,5" zPosition="1" size="140,45" font="Regular;20" halign="center" valign="center" backgroundColor="#18188b" shadowOffset="-2,-2" shadowColor="black" />
-                    <eLabel position="-1,55" size="612,1" backgroundColor="#999999" />
-                    <widget name="config" position="0,75" size="610,355" scrollbarMode="showOnDemand" />
-                </screen>"""
+        skin = load_subskin("BaseMenuScreen_hd")
 
     def __init__(self, session, title):
         Screen.__init__(self, session)

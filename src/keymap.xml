@@ -33,11 +33,12 @@
 		<key id="KEY_OK" mapto="showHideStatus" flags="m"/>
 		<key id="KEY_EXIT" mapto="confirmClose" flags="m"/>
 		<key id="KEY_ESC" mapto="confirmClose" flags="m"/>
-		<key id="KEY_CHANNELUP" mapto="channelPlusPressed" flags="mr" />
-		<key id="KEY_CHANNELDOWN" mapto="channelMinusPressed" flags="mr" />
+		<!--key id="KEY_CHANNELUP" mapto="channelPlusPressed" flags="mr" />
+		<key id="KEY_CHANNELDOWN" mapto="channelMinusPressed" flags="mr" /-->
 		<key id="KEY_5" mapto="applySavedDelay" flags="m" />
 		<key id="KEY_6" mapto="saveCurrentDelay" flags="m" />
 		<key id="KEY_INFO" mapto="showHelp" flags="m" />
+		<key id="KEY_MENU" mapto="externalStyle" flags="m" />
 	</map>
 		<map context="NumberActions">
 		<key id="KEY_5" mapto="importsettings" flags="m" />

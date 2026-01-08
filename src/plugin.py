@@ -12,6 +12,7 @@ import six
 import logging
 import os
 import json, re
+from xml.etree import ElementTree as ET
 from datetime import datetime
 from Tools.Directories import fileExists
 from .Tmdb_scraper import scrape_tmdb_movies, scrape_movie_details
@@ -26,8 +27,23 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-VER = "1.8.0.05"
+VER = "1.8.0.06"
 log = logging.getLogger("SubsSupport")
+
+_SUBSKINS_PATH = "/usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subskins.xml"
+_SUBSKINS_CACHE = None
+
+def load_subskin(skin_id, default=None):
+    global _SUBSKINS_CACHE
+    if _SUBSKINS_CACHE is None:
+        _SUBSKINS_CACHE = {}
+        if os.path.exists(_SUBSKINS_PATH):
+            root = ET.parse(_SUBSKINS_PATH).getroot()
+            for node in root.findall("skin"):
+                sid = node.get("id")
+                # text inside CDATA becomes node.text
+                _SUBSKINS_CACHE[sid] = (node.text or "").strip()
+    return _SUBSKINS_CACHE.get(skin_id, default)
 
 def openSubtitlesSearch(session, **kwargs):
     settings = initSubsSettings().search
@@ -65,40 +81,10 @@ def openSubsSupportSettings(session, **kwargs):
     session.open(SubsSupportSettings, settings, settings.search, settings.external, settings.embedded, config.plugins.subsSupport.dvb)
 
 class SubsSupportSettings(Screen):
-    if isFullHD():
-        skin = """
-            <screen position="center,center" size="710,378">
-                <widget source="menuList" render="Listbox" scrollbarMode="showOnDemand" position="10,10" size="692,362" zPosition="3" transparent="1" >
-                    <convert type="TemplatedMultiContent">
-                        {"templates":
-                            {"default": (50, [
-                                MultiContentEntryText(pos=(0, 0), size=(530, 45), font=0, flags=RT_HALIGN_LEFT|RT_VALIGN_CENTER|RT_WRAP, text=0, color=0xFFFFFF)
-                            ], True, "showOnDemand"),
-                            },
-                        "fonts": [gFont("Regular", 38)],
-                        "itemHeight": 50
-                        }
-                    </convert>
-                </widget>
-            </screen>
-            """
+    if isFullHD:
+        skin = load_subskin("SubsSupportSettings_fhd")
     else:
-        skin = """
-            <screen position="center,center" size="370,200">
-                <widget source="menuList" render="Listbox" scrollbarMode="showOnDemand" position="10,10" size="340,180" zPosition="3" transparent="1" >
-                    <convert type="TemplatedMultiContent">
-                        {"templates":
-                            {"default": (30, [
-                                MultiContentEntryText(pos=(0, 0), size=(340, 30), font = 0, flags=RT_HALIGN_LEFT|RT_VALIGN_CENTER|RT_WRAP, text=0, color=0xFFFFFF)
-                            ], True, "showOnDemand"),
-                            },
-                        "fonts": [gFont("Regular", 23)],
-                        "itemHeight": 30
-                        }
-                    </convert>
-                </widget>
-            </screen>
-            """
+        skin = load_subskin("SubsSupportSettings_hd")
 
     def __init__(self, session, generalSettings, searchSettings, externalSettings, embeddedSettings, dvbSettings):
         Screen.__init__(self, session)
@@ -173,12 +159,7 @@ class SubsSupportSettings(Screen):
         self.session.open(SubsSetupExternal, self.externalSettings)
 
     def openEmbeddedSettings(self):
-        try:
-            from Screens.AudioSelection import QuickSubtitlesConfigMenu
-        except ImportError:
-            self.session.open(SubsSetupEmbedded, self.embeddedSettings)
-        else:
-            self.session.open(MessageBox, _("Please change embedded subtitles settings in Settings / System / Subtitles settings"), MessageBox.TYPE_INFO)
+        self.session.open(SubsSetupEmbedded, self.embeddedSettings)
 
     def openDVBPlayerSettings(self):
         self.session.open(SubsSetupDVBPlayer, self.dvbSettings)

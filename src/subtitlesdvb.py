@@ -15,6 +15,8 @@ from Components.config import ConfigSubsection, getConfigListEntry
 from Components.config import ConfigText, ConfigNothing
 from Components.config import config, ConfigOnOff, ConfigInteger, ConfigSubsection
 from Components.ConfigList import ConfigListScreen
+from Components.config import configfile
+from Components.ConfigList import ConfigListScreen
 from Screens.HelpMenu import HelpableScreen
 from .compat import MessageBox, eConnectCallback
 from Screens.MinuteInput import MinuteInput
@@ -155,7 +157,15 @@ class SubsSupportDVB(object):
                 self.subsScreen = self.session.instantiateDialog(SubsScreen, self.subsSettings.external)
                 subsEngine = SubsEngineDVB(self.session, self.subsSettings.engine, self.subsScreen)
                 subsEngine.setSubsList(subsList)
-                self.session.openWithCallback(self.subsControllerCB, SubsControllerDVB, subsEngine, config.plugins.subsSupport.dvb.autoSync.value)
+                self.session.openWithCallback(
+                    self.subsControllerCB,
+                    SubsControllerDVB,
+                    subsEngine,
+                    config.plugins.subsSupport.dvb.autoSync.value,
+                    False,
+                    None,
+                    self.subsSettings.external
+                )
         else:
             print('[SubsSupportDVB] no subtitles selected, exit')
 
@@ -308,10 +318,110 @@ class SubtitlePicker(Screen):
         if 0 <= index < len(self.subsList):
             self.close(index)
 
+class DVBExternalStyleScreen(Screen, ConfigListScreen, HelpableScreen):
+    """
+    Live editor for config.plugins.subtitlesSupport.external (same items as initExternalSettings()).
+    Applies changes instantly to renderer.
+    """
+    skin = """
+    <screen position="center,center" size="900,522" title="External subtitles style (live)">
+        <widget name="config" position="10,10" size="880,450" scrollbarMode="showOnDemand" />
+        <eLabel position="10,470" size="880,2" backgroundColor="grey" />
+        <widget source="key_red" render="Label" position="10,480" size="280,30" font="Regular;24" />
+        <widget source="key_green" render="Label" position="310,480" size="280,30" font="Regular;24" />
+        <widget source="key_yellow" render="Label" position="610,480" size="280,30" font="Regular;24" />
+        <eLabel name="" position="10,512" size="280,8" backgroundColor="#f5516d" zPosition="3" />
+        <eLabel name="" position="310,512" size="280,8" backgroundColor="#92ef80" zPosition="3" />
+        <eLabel name="" position="610,512" size="280,8" backgroundColor="#ffd65c" zPosition="3" />
+    </screen>
+    """
+
+    def __init__(self, session, externalSettings, apply_cb):
+        Screen.__init__(self, session)
+        HelpableScreen.__init__(self)
+        self.externalSettings = externalSettings
+        self.apply_cb = apply_cb
+
+        self["key_red"] = StaticText(_("Cancel"))
+        self["key_green"] = StaticText(_("Save"))
+        self["key_yellow"] = StaticText(_("Apply now"))
+
+        ConfigListScreen.__init__(self, [], session=session)
+
+        self["actions"] = HelpableActionMap(self, "OkCancelActions",
+        {
+            "cancel": (self.keyCancel, _("cancel")),
+            "ok": (self.keyOk, _("ok")),
+        }, -1)
+
+        self["coloractions"] = HelpableActionMap(self, "ColorActions",
+        {
+            "red": (self.keyCancel, _("cancel")),
+            "green": (self.keySave, _("save")),
+            "yellow": (self.keyApply, _("apply now")),
+        }, -1)
+
+        self.onLayoutFinish.append(self.buildMenu)
+
+    def buildMenu(self):
+        # Reuse the same list builder already used in subtitles.py
+        from .subtitles import SubsSetupExternal
+        self["config"].setList(SubsSetupExternal.getConfigList(self.externalSettings))
+
+    def _apply_live(self):
+        if callable(self.apply_cb):
+            self.apply_cb()
+
+    def keyLeft(self):
+        ConfigListScreen.keyLeft(self)
+        cur = self["config"].getCurrent()
+        if cur and cur[1] in (
+            self.externalSettings.shadow.enabled,
+            self.externalSettings.shadow.type,
+            self.externalSettings.background.enabled,
+            self.externalSettings.background.type,
+        ):
+            self.buildMenu()
+        self._apply_live()
+
+    def keyRight(self):
+        ConfigListScreen.keyRight(self)
+        cur = self["config"].getCurrent()
+        if cur and cur[1] in (
+            self.externalSettings.shadow.enabled,
+            self.externalSettings.shadow.type,
+            self.externalSettings.background.enabled,
+            self.externalSettings.background.type,
+        ):
+            self.buildMenu()
+        self._apply_live()
+
+    def keyOk(self):
+        try:
+            ConfigListScreen.keyOK(self)
+        except Exception:
+            pass
+        self._apply_live()
+
+    def keyApply(self):
+        self._apply_live()
+
+    def keySave(self):
+        for x in self["config"].list:
+            x[1].save()
+        configfile.save()
+        self._apply_live()
+        self.close(True)
+
+    def keyCancel(self):
+        for x in self["config"].list:
+            x[1].cancel()
+        self.close(False)
+
 class SubsControllerDVB(Screen, HelpableScreen):
     fpsChoices = ["23.976", "23.980", "24.000", "25.000", "29.970", "30.000"]
 
-    def __init__(self, session, engine, autoSync=False, setSubtitlesFps=False, subtitlesFps=None):
+    def __init__(self, session, engine, autoSync=False, setSubtitlesFps=False, subtitlesFps=None, externalSettings=None):
         desktopSize = getDesktopSize()
         windowPosition = (int(0.03 * desktopSize[0]), int(0.05 * desktopSize[1]))
         windowSize = (int(0.9 * desktopSize[0]), int(0.4 * desktopSize[1]))
@@ -348,6 +458,7 @@ class SubsControllerDVB(Screen, HelpableScreen):
             self.providedSubtitlesFps = subtitlesFps
         else:
             self.providedSubtitlesFps = None
+        self.externalSettings = externalSettings
         self.hideTimer = eTimer()
         self.hideTimer_conn = eConnectCallback(self.hideTimer.timeout, self.hideStatus)
         self.hideTimerDelay = 5000
@@ -387,6 +498,7 @@ class SubsControllerDVB(Screen, HelpableScreen):
             "saveCurrentDelay": (self.saveCurrentDelay,_("save current delay for this channel")),
             "showHelp": (self.showHelp, _("show help")),
             "confirmClose": (self.confirmClose, _("exit (confirm)")),
+            "externalStyle": (self.externalStyle, _("External style")),
         }, -1)
 
         try:
@@ -405,6 +517,26 @@ class SubsControllerDVB(Screen, HelpableScreen):
             self.onFirstExecBegin.append(self.eventSync)
         self.onClose.append(self.engine.close)
         self.onClose.append(self.delTimers)
+
+    def applyExternalStyleNow(self):
+        r = self.engine.renderer
+        try:
+            r.hideSubtitle()
+        except Exception:
+            pass
+        if hasattr(r, "reloadSettings"):
+            r.reloadSettings()
+        self.engine.renderSub()
+
+    def externalStyle(self):
+        if self.externalSettings is None:
+            self.session.openMessageBox(_("External settings not provided!"), MessageBox.TYPEERROR, timeout=3)
+            return
+        self.session.open(
+            DVBExternalStyleScreen,
+            self.externalSettings,
+            self.applyExternalStyleNow
+    )
 
     def confirmClose(self):
         def cb(answer):
@@ -436,6 +568,7 @@ class SubsControllerDVB(Screen, HelpableScreen):
             _("5: Apply saved delay"),
             _("6: Save current delay for this channel"),
             _("EXIT: Exit (confirm)"),
+            _("MENU: Show subtitle Style Settings"),
             _("INFO: Show this help"),
         ])
         self.session.open(MessageBox, txt, MessageBox.TYPE_INFO, timeout=20)
