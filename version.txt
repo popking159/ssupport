@@ -1,2 +1,2 @@
 version='1.8.0.06'
-description='* add subtitle style control from dvb subtitle player 'MENU button'. \n* add help screen for dvb subtitle player 'INFO button'. \n* enhance subtitle background control. \n* add internal font folder to use the fonts inside in dvb subtitle player.'
+description='* add subtitle style control from dvb subtitle player 'MENU button' .\n* add help screen for dvb subtitle player 'INFO button' .\n* enhance subtitle background control .\n* add internal font folder to use the fonts inside in dvb subtitle player .\n* add more colors to use with subtitle text and background .'
