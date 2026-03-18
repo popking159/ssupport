@@ -1,2 +1,2 @@
-version='1.8.0.06'
-description='* add subtitle style control from dvb subtitle player using MENU button .\n* add help screen for dvb subtitle player using INFO button .\n* enhance subtitle background control .\n* add internal font folder to use the fonts inside in dvb subtitle player .\n* add more colors to use with subtitle text and background .'
+version='1.8.0.07'
+description='* fixes for python 3.14 .\n* change default regular font transparency to opaque .'
