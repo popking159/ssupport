@@ -1,2 +1,2 @@
-version='1.8.0.07'
-description='* fixes for python 3.14 .\n* change default regular font transparency to opaque .'
+version='1.8.0.08'
+description='* fixes tmdb search .\n* add line by line instant translation .'
