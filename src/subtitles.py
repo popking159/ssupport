@@ -249,6 +249,97 @@ alphaChoiceList = [("00", _("opaque"))]
 alphaChoiceList.extend([("%02x" % val, "%d %%" % (int(percent * 100 / float(32)))) for percent, val in enumerate(range(0, 256, 8)) if val != 0])
 alphaChoiceList.append(("ff", _("transparent")))
 
+TRANSLATE_MODE_CHOICES = [("off", _("Off")),
+                          ("line", _("Line by line"))]
+TRANSLATE_LANGUAGE_CHOICES = [("auto", _("Auto detect")),
+                              ("ar", _("Arabic")),
+                              ("en", _("English")),
+                              ("de", _("German")),
+                              ("fr", _("French")),
+                              ("es", _("Spanish")),
+                              ("it", _("Italian")),
+                              ("tr", _("Turkish")),
+                              ("ru", _("Russian"))]
+
+
+def _get_translate_cfg(externalSettings):
+    try:
+        return externalSettings.translate
+    except Exception:
+        return None
+
+
+def _get_translate_mode(externalSettings):
+    cfg = _get_translate_cfg(externalSettings)
+    if cfg is None:
+        return "off"
+    try:
+        return cfg.mode.value
+    except Exception:
+        return "off"
+
+
+def _translate_text_google(text, source_lang, target_lang):
+    if not text or not text.strip():
+        return text
+    sl = source_lang or "auto"
+    tl = target_lang or "ar"
+    response = requests.get(
+        "https://translate.googleapis.com/translate_a/single",
+        params={"client": "gtx", "sl": sl, "tl": tl, "dt": "t", "q": text},
+        timeout=2.0
+    )
+    response.raise_for_status()
+    data = response.json()
+    translated = "".join([part[0] for part in data[0] if part and len(part) > 0 and part[0]])
+    return translated.strip() or text
+
+
+def _translate_text_cached(cache, text, source_lang, target_lang, max_entries=500):
+    if not text or not text.strip():
+        return text
+    if source_lang == target_lang and source_lang != "auto":
+        return text
+    key = (source_lang, target_lang, text)
+    if key in cache:
+        return cache[key]
+    translated = _translate_text_google(text, source_lang, target_lang)
+    cache[key] = translated
+    if len(cache) > max_entries:
+        try:
+            first_key = next(iter(cache))
+            del cache[first_key]
+        except Exception:
+            pass
+    return translated
+
+
+def _translate_sub_entry(sub, cache, source_lang, target_lang, max_entries=500):
+    if not isinstance(sub, dict):
+        return sub
+    out = sub.copy()
+    if 'rows' in out and isinstance(out['rows'], list):
+        rows = []
+        for row in out['rows']:
+            if isinstance(row, dict):
+                new_row = row.copy()
+                new_row['text'] = _translate_text_cached(cache, row.get('text', ''), source_lang, target_lang, max_entries)
+                rows.append(new_row)
+            else:
+                rows.append(row)
+        out['rows'] = rows
+        out['text'] = '\n'.join([r.get('text', '') for r in rows if isinstance(r, dict) and r.get('text')])
+    elif 'text' in out:
+        out['text'] = _translate_text_cached(cache, out.get('text', ''), source_lang, target_lang, max_entries)
+    return out
+
+
+def _translate_subs_list(subs_list, cache, source_lang, target_lang, max_entries=500):
+    translated = []
+    for sub in subs_list:
+        translated.append(_translate_sub_entry(sub, cache, source_lang, target_lang, max_entries))
+    return translated
+
 
 def initGeneralSettings(configsubsection):
     configsubsection.pauseVideoOnSubtitlesMenu = ConfigYesNo(default=True)
@@ -263,7 +354,7 @@ def initExternalSettings(configsubsection):
     configsubsection.font = ConfigSubsection()
     configsubsection.font.regular = ConfigSubsection()
     configsubsection.font.regular.type = ConfigSelection(default=getDefaultFont("arial"), choices=fontChoiceList)
-    configsubsection.font.regular.alpha = ConfigSelection(default="ff", choices=alphaChoiceList)
+    configsubsection.font.regular.alpha = ConfigSelection(default="00", choices=alphaChoiceList)
     configsubsection.font.regular.color = ConfigSelection(default="ffff00", choices=colorChoiceList)
 
     configsubsection.font.italic = ConfigSubsection()
@@ -291,6 +382,11 @@ def initExternalSettings(configsubsection):
     configsubsection.background.color = ConfigSelection(default="000000", choices=colorChoiceList)
     configsubsection.background.alpha = ConfigSelection(default="80", choices=alphaChoiceList)
     configsubsection.background.height = ConfigSelection(default="4", choices=["2", "3", "4", "5", "6", "7", "8"])
+    configsubsection.translate = ConfigSubsection()
+    configsubsection.translate.mode = ConfigSelection(default="off", choices=TRANSLATE_MODE_CHOICES)
+    configsubsection.translate.source = ConfigSelection(default="auto", choices=TRANSLATE_LANGUAGE_CHOICES)
+    configsubsection.translate.target = ConfigSelection(default="ar", choices=TRANSLATE_LANGUAGE_CHOICES[1:])
+    configsubsection.translate.cacheSize = ConfigInteger(default=500, limits=(50, 5000))
 
 
 def initEmbeddedSettings(configsubsection):
@@ -777,6 +873,7 @@ class SubsSupport(SubsSupportEmbedded):
         self.__subclassOfScreen = isinstance(self, Screen)
         self.__forceDefaultPath = forceDefaultPath
         self.__showGUIInfoMessages = showGUIInfoMessages
+        self._translation_cache = {}
         self.__checkTimer = eTimer()
         self.__checkTimer_conn = None
         self.__starTimer = eTimer()
@@ -1453,6 +1550,7 @@ class SubsScreen(Screen):
 
         Screen.__init__(self, session)
         self.stand_alone = True
+        self._translation_cache = {}
         self["subtitles"] = SubtitlesWidget()
         self.onLayoutFinish.append(self.__checkElabelCaps)
         self.onLayoutFinish.append(self.reloadSettings)
@@ -1548,6 +1646,18 @@ class SubsScreen(Screen):
         })
 
     def setSubtitle(self, sub):
+        translate_cfg = _get_translate_cfg(self.externalSettings)
+        if translate_cfg is not None and _get_translate_mode(self.externalSettings) == "line":
+            try:
+                sub = _translate_sub_entry(
+                    sub,
+                    self._translation_cache,
+                    translate_cfg.source.value,
+                    translate_cfg.target.value,
+                    int(translate_cfg.cacheSize.value)
+                )
+            except Exception as e:
+                print('[SubsSupport] line translation failed:', e)
         if sub['style'] != self.selectedFont:
             self.selectedFont = sub['style']
             self['subtitles'].setFont(self.font[sub['style']]['gfont'])
@@ -2212,6 +2322,11 @@ class SubsSetupExternal(BaseMenuScreen):
             configList.append(getConfigListEntry(_("Background color"), externalSettings.background.color))
             configList.append(getConfigListEntry(_("Background transparency"), externalSettings.background.alpha))
             configList.append(getConfigListEntry(_("Background height"), externalSettings.background.height))
+        configList.append(getConfigListEntry(_("Subtitle translation mode"), externalSettings.translate.mode))
+        if externalSettings.translate.mode.getValue() != 'off':
+            configList.append(getConfigListEntry(_("Translate from"), externalSettings.translate.source))
+            configList.append(getConfigListEntry(_("Translate to"), externalSettings.translate.target))
+            configList.append(getConfigListEntry(_("Translation cache size"), externalSettings.translate.cacheSize))
         return configList
 
     def __init__(self, session, externalSettings):
@@ -2234,7 +2349,8 @@ class SubsSetupExternal(BaseMenuScreen):
         if current in [self.externalSettings.shadow.type,
                        self.externalSettings.shadow.enabled,
                        self.externalSettings.background.enabled,
-                       self.externalSettings.background.type]:
+                       self.externalSettings.background.type,
+                       self.externalSettings.translate.mode]:
             self.buildMenu()
 
     def keyRight(self):
@@ -2243,7 +2359,8 @@ class SubsSetupExternal(BaseMenuScreen):
         if current in [self.externalSettings.shadow.type,
                        self.externalSettings.shadow.enabled,
                        self.externalSettings.background.enabled,
-                       self.externalSettings.background.type]:
+                       self.externalSettings.background.type,
+                       self.externalSettings.translate.mode]:
             self.buildMenu()
 
 

@@ -27,7 +27,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-VER = "1.8.0.06"
+VER = "1.8.0.08"
 log = logging.getLogger("SubsSupport")
 
 _SUBSKINS_PATH = "/usr/lib/enigma2/python/Plugins/Extensions/SubsSupport/subskins.xml"

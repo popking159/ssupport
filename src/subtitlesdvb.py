@@ -380,6 +380,7 @@ class DVBExternalStyleScreen(Screen, ConfigListScreen, HelpableScreen):
             self.externalSettings.shadow.type,
             self.externalSettings.background.enabled,
             self.externalSettings.background.type,
+            self.externalSettings.translate.mode,
         ):
             self.buildMenu()
         self._apply_live()
@@ -392,6 +393,7 @@ class DVBExternalStyleScreen(Screen, ConfigListScreen, HelpableScreen):
             self.externalSettings.shadow.type,
             self.externalSettings.background.enabled,
             self.externalSettings.background.type,
+            self.externalSettings.translate.mode,
         ):
             self.buildMenu()
         self._apply_live()
