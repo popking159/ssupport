@@ -1,2 +1,2 @@
-version='1.8.0.08'
-description='* fixes tmdb search .\n* add line by line instant translation .'
+version='1.8.0.09'
+description='* fixes tmdb search .\n* add subviewer parser .\n* fix suggestions by adding opensubtitles api provider and the IMDb provider , you can enable , disable suggestions .\n* fix some screens .'
