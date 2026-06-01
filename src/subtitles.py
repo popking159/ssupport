@@ -24,6 +24,7 @@ from six.moves import range
 from six.moves import urllib
 from six.moves.urllib.parse import quote
 from twisted.internet.defer import Deferred
+from twisted.internet import threads
 from twisted.web import client
 
 # Enigma2 components
@@ -77,7 +78,7 @@ from .e2_utils import (
     Captcha, DelayMessageBox, MyConfigList, getFps, fps_float, getFonts,
     BaseMenuScreen, isFullHD, isHD, getDesktopSize
 )
-from .parsers import SubRipParser, MicroDVDParser, AssParser
+from .parsers import SubRipParser, MicroDVDParser, AssParser, SubViewerParser
 from .process import SubsLoader, DecodeError, ParseError, ParserNotFoundError, LoadError
 from .searchsubs import Messages
 from .seek import SubsSeeker, SubtitlesDownloadError, SubtitlesErrors
@@ -131,7 +132,7 @@ ENCODINGS = {("Central and Eastern Europe"): CENTRAL_EASTERN_EUROPE_ENCODINGS,
             ("Greek"): GREEK_ENCODINGS,
             ("Hebrew"): HEBREW_ENCODINGS}
 
-PARSERS = (SubRipParser, MicroDVDParser, AssParser)
+PARSERS = (SubRipParser, SubViewerParser, MicroDVDParser, AssParser)
 
 
 
@@ -251,16 +252,38 @@ alphaChoiceList.append(("ff", _("transparent")))
 
 TRANSLATE_MODE_CHOICES = [("off", _("Off")),
                           ("line", _("Line by line"))]
-TRANSLATE_LANGUAGE_CHOICES = [("auto", _("Auto detect")),
-                              ("ar", _("Arabic")),
-                              ("en", _("English")),
-                              ("de", _("German")),
-                              ("fr", _("French")),
-                              ("es", _("Spanish")),
-                              ("it", _("Italian")),
-                              ("tr", _("Turkish")),
-                              ("ru", _("Russian"))]
-
+TRANSLATE_LANGUAGE_CHOICES = [
+    ("auto", _("Auto detect")),
+    ("ar", _("Arabic")),
+    ("bn", _("Bengali")),
+    ("zh", _("Chinese")),
+    ("cs", _("Czech")),
+    ("da", _("Danish")),
+    ("nl", _("Dutch")),
+    ("en", _("English")),
+    ("fi", _("Finnish")),
+    ("fr", _("French")),
+    ("de", _("German")),
+    ("el", _("Greek")),
+    ("hi", _("Hindi")),
+    ("hu", _("Hungarian")),
+    ("it", _("Italian")),
+    ("ja", _("Japanese")),
+    ("ko", _("Korean")),
+    ("pl", _("Polish")),
+    ("pt", _("Portuguese")),
+    ("ro", _("Romanian")),
+    ("ru", _("Russian")),
+    ("es", _("Spanish")),
+    ("sv", _("Swedish")),
+    ("ta", _("Tamil")),
+    ("te", _("Telugu")),
+    ("th", _("Thai")),
+    ("tr", _("Turkish")),
+    ("uk", _("Ukrainian")),
+    ("ur", _("Urdu")),
+    ("vi", _("Vietnamese")),
+]
 
 def _get_translate_cfg(externalSettings):
     try:
@@ -444,8 +467,15 @@ def initSearchSettings(configsubsection):
     configsubsection.loadSubtitlesAfterDownload = ConfigYesNo(default=True)
     configsubsection.openParamsDialogOnSearch = ConfigYesNo(default=False)
     configsubsection.showProvidersErrorMessage = ConfigYesNo(default=True)
+    configsubsection.suggestions = ConfigSubsection()
+    configsubsection.suggestions.enabled = ConfigYesNo(default=False)
+    configsubsection.suggestions.provider = ConfigSelection(
+        default="imdb",
+        choices=[("imdb", _("IMDb")), ("opensubtitles", _("OpenSubtitles"))]
+    )
+    configsubsection.suggestions.apiKey = ConfigPassword(default="", fixed_size=False)
     # session settings
-    configsubsection.title = ConfigTextWithSuggestionsAndHistory(configsubsection.history, default="", fixed_size=False)
+    configsubsection.title = ConfigTextWithSuggestionsAndHistory(configsubsection.history, configsubsection.suggestions, default="", fixed_size=False)
     configsubsection.type = ConfigSelection(default="movie", choices=[("tv_show", _("TV show")), ("movie", _("Movie"))])
     configsubsection.year = ConfigInteger(default=0, limits=(0, 2100))
     configsubsection.season = ConfigInteger(default=0, limits=(0, 100))
@@ -1409,9 +1439,15 @@ class SubtitlesWidget(GUIComponent):
                 self.instance2.show()
 
                 if self.boundDynamic:
-                    # DYNAMIC background: bar wraps text
-                    self.instance2.setText(text.replace(' ', '.'))  # if you need this trick for calculateSize
+                    # DYNAMIC background: bar wraps text.
+                    # Some Enigma2 images calculate a more reliable width when
+                    # visible placeholder characters are used instead of spaces.
+                    # Restore the real subtitle immediately after measurement so
+                    # the placeholder dots are never displayed to the viewer.
+                    measure_text = text.replace(' ', '.')
+                    self.instance2.setText(measure_text)
                     ws = self.instance2.calculateSize()
+                    self.instance2.setText(text)
                     ws = (ws.width() + self.boundXOffset * 2, ws.height() + self.boundYOffset * 2)
 
                     ds = self.desktopSize
@@ -2859,6 +2895,26 @@ class TMDBScraperScreen(Screen):
                 
         return 'unknown_year'
 
+    def mergeMovieDetails(self, selected_movie, details, filepath=None):
+        """Merge the TMDB search card with scraped details and optionally persist it.
+
+        scrape_movie_details() intentionally returns page details only.  The search
+        card carries identity fields such as title, url, media_type and tmdb_id.
+        Always preserve both sets so every action writes the same complete JSON
+        structure.  This also repairs older partial JSON files when they are read.
+        """
+        merged_info = {}
+        if isinstance(selected_movie, dict):
+            merged_info.update(selected_movie)
+        if isinstance(details, dict):
+            merged_info.update(details)
+
+        if filepath and merged_info:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(merged_info, f, indent=2, ensure_ascii=False)
+
+        return merged_info
+
     def selectMovie(self):
         if self["list"].getCurrent():
             # Use try-except to handle different List implementations
@@ -2967,19 +3023,16 @@ class TMDBScraperScreen(Screen):
                 # Fetch details and save to JSON file
                 details = scrape_movie_details(selected_movie['url'])
                 if details:
-                    # Merge basic and detailed info
-                    merged_info = {**selected_movie, **details}
-                    
-                    # Save to JSON file
-                    with open(filepath, 'w', encoding='utf-8') as f:
-                        json.dump(merged_info, f, indent=2, ensure_ascii=False)
+                    # Save the same complete structure used by the OK path.
+                    details = self.mergeMovieDetails(selected_movie, details, filepath)
                 else:
                     print("Failed to scrape movie details")
                     return
             else:
-                # Load existing details
+                # Load existing details and repair older partial JSON files.
                 with open(filepath, 'r', encoding='utf-8') as f:
                     details = json.load(f)
+                details = self.mergeMovieDetails(selected_movie, details, filepath)
             
             # Download images if they don't exist
             if not images_exist and details:
@@ -3044,6 +3097,8 @@ class TMDBScraperScreen(Screen):
                     try:
                         with open(filepath, 'r', encoding='utf-8') as f:
                             details = json.load(f)
+                        # Repair JSON files previously saved by the old Details path.
+                        details = self.mergeMovieDetails(selected_movie, details, filepath)
                         self.displayDetails(details, filepath)
                     except Exception as e:
                         self.session.open(MessageBox, _("Error loading details: %s") % str(e), MessageBox.TYPE_ERROR)
@@ -3053,9 +3108,8 @@ class TMDBScraperScreen(Screen):
                         try:
                             details = scrape_movie_details(selected_movie['url'])
                             if details:
-                                # Save to JSON file
-                                with open(filepath, 'w', encoding='utf-8') as f:
-                                    json.dump(details, f, indent=2, ensure_ascii=False)
+                                # Merge search-result identity fields before saving.
+                                details = self.mergeMovieDetails(selected_movie, details, filepath)
                                 self.displayDetails(details, filepath)
                             else:
                                 self.session.open(MessageBox, _("Could not retrieve details for this movie."), MessageBox.TYPE_INFO)
@@ -3108,6 +3162,8 @@ class TMDBScraperScreen(Screen):
                     try:
                         with open(filepath, 'r', encoding='utf-8') as f:
                             details = json.load(f)
+                        # Normalize and repair partial JSON before using it.
+                        details = self.mergeMovieDetails(selected_movie, details, filepath)
                         
                         # Extract year using our method
                         release_year = self.get_movie_year(details)
@@ -3765,55 +3821,49 @@ class SubsSearchProcess(object):
         self.appContainer_conn = eConnectCallback(self.appContainer.appClosed, self.finishedCB)
 
     def recieveMessages(self, data):
-        def getMessage(data):
-            mSize = int(data[:7])
-            mPayload = data[7:mSize]
-            if self.mpart == False:
-                mPart = mSize > len(data)
-            else:
-                mPart = False
-                self.mpart = False
+        if isinstance(data, bytes):
+            data = data.decode("utf-8", "ignore")
+        elif not isinstance(data, str):
+            data = str(data)
 
-            return mSize, mPayload, mPart
+        self.data += data
 
-        def readMessage(payload):
+        while True:
+            if len(self.data) < 7:
+                return
+
+            header = self.data[:7]
+            try:
+                messageSize = int(header)
+            except Exception:
+                self.log.error("invalid process-message header: %r", header)
+                self.data = ""
+                return
+
+            if messageSize < 7:
+                self.log.error("invalid process-message size: %r", messageSize)
+                self.data = ""
+                return
+
+            if len(self.data) < messageSize:
+                return
+
+            payload = self.data[7:messageSize]
+            self.data = self.data[messageSize:]
+
             try:
                 message = json.loads(payload)
-            except EOFError:
-                pass
-            except Exception:
-                self.log.debug('data is not in JSON format! - %s' % str(payload))
-            else:
-                self.log.debug('message successfully recieved')
-                self.toRead = None
-                self.pPayload = None
+            except Exception as e:
+                self.log.error("invalid process-message JSON: %s", str(e))
+                continue
+
+            try:
                 self.handleMessage(message)
-
-        def readStart(data):
-            mSize, mPayload, mPart = getMessage(data)
-            if not mPart:
-                data = data[mSize:]
-                readMessage(mPayload)
-                if len(data) > 0:
-                    readStart(data)
-            else:
-                self.toRead = mSize - len(data)
-                self.pPayload = mPayload
-
-        def readContinue(data):
-            nextdata = data[:self.toRead]
-            self.pPayload += nextdata
-            data = data[len(nextdata):]
-            self.toRead -= len(nextdata)
-            if self.toRead == 0:
-                readMessage(self.pPayload)
-                if len(data) > 0:
-                    readStart(data)
-
-        if self.pPayload is not None:
-            readContinue(data)
-        else:
-            readStart(data)
+            except Exception as e:
+                # A screen callback failure must not corrupt the framing buffer or
+                # trigger the old unsafe fallback parser.
+                self.log.error("process callback failed: %s", str(e))
+                traceback.print_exc()
 
     def handleMessage(self, data):
         self.log.debug('handleMessage "%s"', data)
@@ -3908,32 +3958,13 @@ class SubsSearchProcess(object):
         self.error = data
 
     def dataOutCB(self, data):
-        self.log.debug("dataOutCB: '%s", data)
-        try:
-            self.mpart = False
-            self.recieveMessages(data)
-        except (AttributeError, TypeError):
-            self.mpart = True
-            ''' DIRTY HACK, FOR NOW '''
-            if type(data) is bytes:
-                data = data.decode("utf-8", "ignore")
-            raw = re.findall('(.*?){"message": (.*?), "value": (.*?)}', data)
-            for size, message, value in raw:
-                value = value.replace("[[", "").replace("]]", "")
-                value = value.split(", ")
-
-            for i in value:
-                if 'lat' in str(i).lower() or "latin" in str(i).lower():
-                    value = str(i)
-                elif not "cyr" in str(i).lower() and not "lat" in str(i).lower() and not "latinica" in str(i).lower():  #1 cirilica sa oznakom cyr i 1 lainica ali bez oznake lat
-                    value = str(i)
-
-            data = str(size) + '{"message": 5, "value"' + ": " + value + "}"
-            self.recieveMessages(data)
+        self.log.debug("dataOutCB: '%s'", data)
+        self.recieveMessages(data)
 
 
     def finishedCB(self, retval):
-        self.processes.remove(self)
+        if self in self.processes:
+            self.processes.remove(self)
         self.log.debug('process finished, retval:%d', retval)
 
 
@@ -3953,6 +3984,7 @@ class Suggestions(object):
             self.successCB = successCB
             self.errorCB = errorCB
             d.addCallbacks(self.getSuggestionsSuccess, self.getSuggestionsError)
+        return self
 
     def getSuggestionsSuccess(self, data):
         if not self._cancelled:
@@ -3971,12 +4003,214 @@ class Suggestions(object):
 
 
 class OpenSubtitlesSuggestions(Suggestions):
+    API_URL = "https://api.opensubtitles.com/api/v1/subtitles"
+    MIN_QUERY_LENGTH = 2
+    MAX_SUGGESTIONS = 20
+
+    def __init__(self, suggestionsCfg=None):
+        Suggestions.__init__(self)
+        self.suggestionsCfg = suggestionsCfg
+
+    def _isEnabled(self):
+        try:
+            return bool(
+                self.suggestionsCfg.enabled.value
+                and self.suggestionsCfg.provider.value == "opensubtitles"
+                and self.suggestionsCfg.apiKey.value.strip()
+            )
+        except Exception:
+            return False
+
+    def _emptyResult(self):
+        d = Deferred()
+        d.callback(b'{"data": []}')
+        return d
+
     def _getSuggestions(self, queryString):
-        query = "http://www.opensubtitles.org/libs/suggest.php?format=json2&SubLanguageID=null&MovieName=" + quote(queryString)
-        return client.getPage(six.ensure_binary(query), timeout=6)
+        queryString = (queryString or "").strip()
+        if not self._isEnabled() or len(queryString) < self.MIN_QUERY_LENGTH:
+            return self._emptyResult()
+
+        apiKey = self.suggestionsCfg.apiKey.value.strip()
+
+        # The existing opensubtitles.com seeker already uses requests successfully.
+        # Keep the GUI responsive by executing the HTTP request in a Twisted worker thread.
+        def fetch():
+            response = requests.get(
+                self.API_URL,
+                params={"query": queryString},
+                headers={
+                    "Api-Key": apiKey,
+                    "User-Agent": "SubsSupport/%s" % __version__,
+                    "Accept": "application/json",
+                },
+                timeout=6
+            )
+            response.raise_for_status()
+            return response.content
+
+        return threads.deferToThread(fetch)
 
     def _processResult(self, data):
-        return json.loads(data)['result']
+        if isinstance(data, bytes):
+            data = data.decode("utf-8", "replace")
+
+        if not data.lstrip().startswith(("{", "[")):
+            print("[OpenSubtitlesSuggestions] non-JSON response received")
+            return []
+
+        try:
+            payload = json.loads(data)
+        except Exception as e:
+            print("[OpenSubtitlesSuggestions] invalid JSON response:", e)
+            return []
+
+        if not isinstance(payload, dict):
+            return []
+
+        titles = {}
+        for item in payload.get("data", []):
+            attributes = item.get("attributes", {}) or {}
+            feature = attributes.get("feature_details", {}) or {}
+            name = (
+                feature.get("parent_title")
+                or feature.get("title")
+                or feature.get("movie_name")
+                or attributes.get("release")
+            )
+            if not name:
+                continue
+
+            name = toString(name).strip()
+            if not name:
+                continue
+
+            try:
+                total = int(attributes.get("download_count", 0) or 0)
+            except Exception:
+                total = 0
+
+            # REST search returns subtitles, not distinct titles. Collapse duplicates.
+            key = name.lower()
+            previous = titles.get(key)
+            if previous is None or total > previous["total"]:
+                titles[key] = {"name": name, "total": total}
+
+        result = list(titles.values())
+        result.sort(key=lambda x: int(x.get("total", 0)), reverse=True)
+        return result[:self.MAX_SUGGESTIONS]
+
+
+class IMDbSuggestions(Suggestions):
+    API_URL = "https://v3.sg.media-imdb.com/suggestion/x/%s.json"
+    MIN_QUERY_LENGTH = 2
+    MAX_SUGGESTIONS = 20
+
+    # Keep title-like IMDb entities and ignore people, companies and keywords.
+    ALLOWED_TITLE_TYPES = {
+        "movie", "tvMovie", "tvSeries", "tvMiniSeries", "tvSpecial",
+        "tvEpisode", "short", "video"
+    }
+
+    def __init__(self, suggestionsCfg=None):
+        Suggestions.__init__(self)
+        self.suggestionsCfg = suggestionsCfg
+
+    def _isEnabled(self):
+        try:
+            return bool(
+                self.suggestionsCfg.enabled.value
+                and self.suggestionsCfg.provider.value == "imdb"
+            )
+        except Exception:
+            return False
+
+    def _emptyResult(self):
+        d = Deferred()
+        d.callback(b'{"d": []}')
+        return d
+
+    def _getSuggestions(self, queryString):
+        queryString = (queryString or "").strip()
+        if not self._isEnabled() or len(queryString) < self.MIN_QUERY_LENGTH:
+            return self._emptyResult()
+
+        # IMDb serves lightweight suggestion JSON files from a CDN.  This is an
+        # undocumented endpoint, so failures must remain silent and harmless.
+        url = self.API_URL % quote(queryString.lower(), safe="")
+
+        def fetch():
+            response = requests.get(
+                url,
+                headers={
+                    "User-Agent": "SubsSupport/%s" % __version__,
+                    "Accept": "application/json",
+                },
+                timeout=6
+            )
+            response.raise_for_status()
+            return response.content
+
+        return threads.deferToThread(fetch)
+
+    def _processResult(self, data):
+        if isinstance(data, bytes):
+            data = data.decode("utf-8", "replace")
+
+        if not data.lstrip().startswith(("{", "[")):
+            print("[IMDbSuggestions] non-JSON response received")
+            return []
+
+        try:
+            payload = json.loads(data)
+        except Exception as e:
+            print("[IMDbSuggestions] invalid JSON response:", e)
+            return []
+
+        if not isinstance(payload, dict):
+            return []
+
+        raw_items = payload.get("d", []) or []
+        suggestions = []
+        seen = set()
+
+        for index, item in enumerate(raw_items):
+            if not isinstance(item, dict):
+                continue
+
+            imdb_id = toString(item.get("id") or "")
+            title_type = toString(item.get("qid") or "")
+            title = toString(item.get("l") or "").strip()
+
+            # IMDb title IDs begin with "tt".  qid is normally present, but
+            # allow a title record without qid so minor CDN schema changes do
+            # not unnecessarily hide valid titles.
+            if not imdb_id.startswith("tt") or not title:
+                continue
+            if title_type and title_type not in self.ALLOWED_TITLE_TYPES:
+                continue
+
+            year = item.get("y")
+            display_name = title
+            if year not in (None, ""):
+                display_name = "%s (%s)" % (title, toString(year))
+
+            key = display_name.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+
+            # IMDb already ranks the CDN array.  Preserve that ordering while
+            # returning the same {name, total} structure used by the GUI.
+            suggestions.append({
+                "name": display_name,
+                "total": max(len(raw_items) - index, 1)
+            })
+
+            if len(suggestions) >= self.MAX_SUGGESTIONS:
+                break
+
+        return suggestions
 
 
 class HistorySuggestions(Suggestions):
@@ -4106,13 +4340,17 @@ class HistoryListScreen(BaseSuggestionsListScreen):
 
 
 class ConfigTextWithSuggestionsAndHistory(ConfigText):
-    def __init__(self, historyCfg, default="", fixed_size=True, visible_width=False):
+    def __init__(self, historyCfg, suggestionsCfg=None, default="", fixed_size=True, visible_width=False):
         ConfigText.__init__(self, default, fixed_size, visible_width)
         self.historyCfg = historyCfg
+        self.suggestionsCfg = suggestionsCfg
         self.historyClass = HistorySuggestions
         self.historyWindow = None
         self.__history = None
-        self.suggestionsClass = OpenSubtitlesSuggestions
+        self.suggestionsClasses = {
+            "imdb": IMDbSuggestions,
+            "opensubtitles": OpenSubtitlesSuggestions,
+        }
         self.suggestionsWindow = None
         self.__suggestions = None
         self.currentWindow = None
@@ -4235,12 +4473,39 @@ class ConfigTextWithSuggestionsAndHistory(ConfigText):
 
     def gotSuggestionsError(self, val):
         print("[ConfigTextWithSuggestions] gotSuggestionsError:", val)
+        if self.suggestionsWindow:
+            self.suggestionsWindow.update([])
 
     def gotHistoryError(self, val):
         print("[ConfigTextWithSuggestions] gotHistoryError:", val)
 
     def getSuggestions(self):
-        self.__suggestions = self.suggestionsClass().getSuggestions(self.value, self.propagateSuggestions, self.gotSuggestionsError)
+        self.cancelGetSuggestions()
+        self.__suggestions = None
+        try:
+            enabled = self.suggestionsCfg.enabled.value
+            provider = self.suggestionsCfg.provider.value
+            apiKey = self.suggestionsCfg.apiKey.value.strip()
+        except Exception:
+            enabled = False
+            provider = ""
+            apiKey = ""
+
+        # IMDb suggestions need no key.  OpenSubtitles suggestions are enabled
+        # only when their dedicated API key has been entered.
+        if not enabled or (provider == "opensubtitles" and not apiKey):
+            if self.suggestionsWindow:
+                self.suggestionsWindow.update([])
+            return
+
+        suggestionsClass = self.suggestionsClasses.get(provider)
+        if suggestionsClass is None:
+            if self.suggestionsWindow:
+                self.suggestionsWindow.update([])
+            return
+
+        self.__suggestions = suggestionsClass(self.suggestionsCfg)
+        self.__suggestions.getSuggestions(self.value, self.propagateSuggestions, self.gotSuggestionsError)
 
     def getHistory(self):
         self.__history = self.historyClass(self.historyCfg).getSuggestions(self.value, self.propagateHistory, self.gotHistoryError)
@@ -4659,6 +4924,7 @@ class SubsSearch(Screen):
         self.__downloadedSubtitles = []
         self.__downloading = False
         self.__searching = False
+        self.__finished = {}
         self["loadmessage"] = Label("")
         self["errormessage"] = Label("")
         self["search_info"] = List([])
@@ -4902,12 +5168,15 @@ class SubsSearch(Screen):
     def searchSubs(self):
         def searchSubsUpdate(args):
             pfinished, status, value = args
+            if not hasattr(self, '_SubsSearch__finished'):
+                self.__finished = {}
             if status:
                 self.__finished[pfinished] = value
             else:
                 self.__finished[pfinished] = {'list': [], 'status': status, 'message': str(value)}
-            progressMessage = "%s - %d%%" % (_("loading subtitles list"), int(len(self.__finished.keys()) / float(len(provider)) * 100))
-            progressMessage += "\n" + _("subtitles found") + " (%d)" % (sum(len(self.__finished[p]['list']) for p in self.__finished.keys()))
+            providerCount = max(len(provider), 1)
+            progressMessage = "%s - %d%%" % (_("loading subtitles list"), int(len(self.__finished.keys()) / float(providerCount) * 100))
+            progressMessage += "\n" + _("subtitles found") + " (%d)" % (sum(len(self.__finished[p].get('list', [])) for p in self.__finished.keys()))
             progressMessage += "\n\n" + _("Press OK to Stop")
             self.message.info(progressMessage)
 
@@ -5473,6 +5742,11 @@ class SubsSearchSettings(Screen, ConfigListScreen):
         configList.append(getConfigListEntry(_("Preferred Movie provider"), searchSettings.movieProvider))
         configList.append(getConfigListEntry(_("Preferred TV show provider"), searchSettings.tvshowProvider))
         configList.append(getConfigListEntry(_("Manual search"), searchSettings.manualSearch))
+        configList.append(getConfigListEntry(_("Enable title suggestions"), searchSettings.suggestions.enabled))
+        if searchSettings.suggestions.enabled.value:
+            configList.append(getConfigListEntry(_("Suggestions provider"), searchSettings.suggestions.provider))
+            if searchSettings.suggestions.provider.value == "opensubtitles":
+                configList.append(getConfigListEntry(_("OpenSubtitles API key for suggestions"), searchSettings.suggestions.apiKey))
         configList.append(getConfigListEntry(_("Subtitles provider timeout"), searchSettings.timeout))
         configList.append(getConfigListEntry(_("Check search parameters before subtitles search"), searchSettings.openParamsDialogOnSearch))
         configList.append(getConfigListEntry(_("Sort subtitles list by"), searchSettings.defaultSort))
@@ -5619,11 +5893,19 @@ class SubsSearchSettings(Screen, ConfigListScreen):
                             self.searchSettings.lang3.isChanged())
         for x in self["config"].list:
             x[1].save()
+        # Save nested suggestion values even when the API-key row is currently hidden.
+        self.searchSettings.suggestions.enabled.save()
+        self.searchSettings.suggestions.provider.save()
+        self.searchSettings.suggestions.apiKey.save()
         self.close(langChanged)
 
     def keyCancel(self):
         for x in self["config"].list:
             x[1].cancel()
+        # Cancel nested suggestion values even when the API-key row is currently hidden.
+        self.searchSettings.suggestions.enabled.cancel()
+        self.searchSettings.suggestions.provider.cancel()
+        self.searchSettings.suggestions.apiKey.cancel()
         self.close()
 
     def keyUp(self):
@@ -5648,14 +5930,18 @@ class SubsSearchSettings(Screen, ConfigListScreen):
         if self.focus == self.FOCUS_CONFIG:
             ConfigListScreen.keyRight(self)
             if self['config'].getCurrent()[1] in [self.searchSettings.saveTo,
-                self.searchSettings.downloadHistory.enabled]:
+                self.searchSettings.downloadHistory.enabled,
+                self.searchSettings.suggestions.enabled,
+                self.searchSettings.suggestions.provider]:
                 self.buildMenu()
 
     def keyLeft(self):
         if self.focus == self.FOCUS_CONFIG:
             ConfigListScreen.keyLeft(self)
             if self['config'].getCurrent()[1] in [self.searchSettings.saveTo,
-                self.searchSettings.downloadHistory.enabled]:
+                self.searchSettings.downloadHistory.enabled,
+                self.searchSettings.suggestions.enabled,
+                self.searchSettings.suggestions.provider]:
                 self.buildMenu()
 
     def resetDefaults(self):
@@ -5709,9 +5995,11 @@ class SubsSearchParamsMenu(Screen, ConfigListScreen):
         sourceTitleFont = 21 * ratio
         sourceTitleSize = (xFullSize, sourceTitleFont * 2 + 10)
         separatorSize = (xFullSize, 2 * ratio)
-        configSize = (xFullSize, windowSize[1] - (2 * 10 * ratio))
         configFont = 21 * ratio
         configItemHeight = configFont + 10
+        blueKeyFont = 20 * ratio
+        blueKeySize = (xFullSize, blueKeyFont + 10)
+        blueKeyBarSize = (xFullSize, 3 * ratio)
 
         windowPos = (desktopSize[0] / 2 - windowSize[0] / 2, desktopSize[1] / 5 * 3 - windowSize[1] / 2)
 
@@ -5719,6 +6007,9 @@ class SubsSearchParamsMenu(Screen, ConfigListScreen):
         sourceTitlePos = (xOffset * ratio, sourceTitleInfoPos[1] + sourceTitleInfoSize[1] + 10 * ratio)
         separatorPos = (xOffset * ratio, sourceTitlePos[1] + sourceTitleSize[1] + 10 * ratio)
         configPos = (xOffset * ratio, separatorPos[1] + separatorSize[1] + 10 * ratio)
+        blueKeyPos = (xOffset * ratio, windowSize[1] - blueKeySize[1] - (5 * ratio))
+        blueKeyBarPos = (xOffset * ratio, windowSize[1] - blueKeyBarSize[1])
+        configSize = (xFullSize, max(configItemHeight, blueKeyPos[1] - configPos[1] - (5 * ratio)))
 
         self.skin = """
             <screen position="%d,%d" size="%d,%d" >
@@ -5726,12 +6017,16 @@ class SubsSearchParamsMenu(Screen, ConfigListScreen):
                 <widget source="sourceTitle" render="Label" position="%d,%d" size="%d,%d" halign="center" valign="center" font="Regular;%d" />
                 <eLabel position="%d,%d" size="%d,%d" backgroundColor="#999999" />
                 <widget name="config" position="%d,%d" size="%d,%d" font="Regular;%d" itemHeight="%d" scrollbarMode="showOnDemand" />
+                <widget source="key_blue" render="Label" position="%d,%d" size="%d,%d" halign="right" valign="center" font="Regular;%d" foregroundColor="#66BFFF" />
+                <eLabel position="%d,%d" size="%d,%d" backgroundColor="#0066FF" />
             </screen>""" % (
                     windowPos[0], windowPos[1], windowSize[0], windowSize[1],
                     sourceTitleInfoPos[0], sourceTitleInfoPos[1], sourceTitleInfoSize[0], sourceTitleInfoSize[1], sourceTitleInfoFont,
                     sourceTitlePos[0], sourceTitlePos[1], sourceTitleSize[0], sourceTitleSize[1], sourceTitleFont,
                     separatorPos[0], separatorPos[1], separatorSize[0], separatorSize[1],
-                    configPos[0], configPos[1], configSize[0], configSize[1], configFont, configItemHeight
+                    configPos[0], configPos[1], configSize[0], configSize[1], configFont, configItemHeight,
+                    blueKeyPos[0], blueKeyPos[1], blueKeySize[0], blueKeySize[1], blueKeyFont,
+                    blueKeyBarPos[0], blueKeyBarPos[1], blueKeyBarSize[0], blueKeyBarSize[1]
                     )
         Screen.__init__(self, session)
         ConfigListScreen.__init__(self, [], session=session)
@@ -5751,6 +6046,7 @@ class SubsSearchParamsMenu(Screen, ConfigListScreen):
         else:
             self['sourceTitleInfo'] = StaticText("%s [%d/%d]" % (_("Source title"), 1, len(self.sourceTitleList)))
         self['sourceTitle'] = StaticText(self.sourceTitle)
+        self['key_blue'] = StaticText(_("Next source title") if len(self.sourceTitleList) > 0 else "")
         self["suggestionActions"] = ActionMap(["OkCancelActions", "ColorActions", "DirectionActions"],
             {
                  "ok": self.switchToConfigList,
