@@ -6,7 +6,10 @@ from .baseparser import BaseParser, ParseError, HEX_COLORS
 
 class SubRipParser(BaseParser):
     format = "SubRip"
-    parsing = ('.srt',)
+    # Some providers distribute SubRip content with a .sub suffix.
+    # The loader can safely try this parser first and fall back to MicroDVD
+    # when the content does not contain SubRip timestamps.
+    parsing = ('.srt', '.sub')
 
     def _parse(self, text, fps):
         return self._srt_to_dict(text)
@@ -52,7 +55,7 @@ class SubRipParser(BaseParser):
             colorText = colorText.replace("'", "").replace('"', '')
 
         if colorText:
-            hexColor = re.search("(\#[0-9,a-f,A-F]{6})", colorText)
+            hexColor = re.search(r"(#[0-9,a-f,A-F]{6})", colorText)
             if hexColor:
                 color = hexColor.group(1)[1:]
             else:

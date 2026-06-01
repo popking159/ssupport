@@ -83,7 +83,9 @@ class BaseParser(object):
             text = text[1:]
 
         text = text.strip()
-        text = text.replace('\x00', '').replace('.', '')
+        # Preserve literal periods in subtitle text. Dot characters are valid
+        # dialogue content and must not be removed before format parsing.
+        text = text.replace('\x00', '')
         text = re.sub(u'[\u064e\u064f\u0650\u0651\u0652\u064c\u064b\u064d\u0640\ufc62]', '', text)
         text = re.sub(r'[\u200E-\u202E]', '', text).strip()
 
