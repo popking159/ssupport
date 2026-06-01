@@ -8,33 +8,44 @@ from .OpenSubtitles2Utilities import get_language_info
 from .OpenSubtitles2Utilities import LANGUAGES
 import os.path
 import http.client
-import json, random
+import json
 import sys
 from urllib.request import HTTPCookieProcessor, build_opener, install_opener, Request, urlopen
 from urllib.parse import urlencode
 from ..utilities import languageTranslate, getFileSize, log
 from ..seeker import SubtitlesDownloadError, SubtitlesErrors
+from ..user_agents import get_api_user_agent, get_random_ua
 
-USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 15_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.2 Mobile/15E148 Safari/604.1"
-]
+def build_api_headers(api_key, token=None, content_type=None):
+    """Build headers for api.opensubtitles.com REST requests.
 
-def get_random_ua():
-    return random.choice(USER_AGENTS)
-HDR = {
-    "User-Agent": get_random_ua(),
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Content-Type': 'text/html; charset=UTF-8',
-    'Host': 'www.opensubtitles.com',
-    'Referer': 'https://www.opensubtitles.com',
-    'Upgrade-Insecure-Requests': '1',
-    'Connection': 'keep-alive',
-    'Accept-Encoding': 'gzip, deflate'
-}
+    The REST API expects a stable application name and version in User-Agent.
+    Random browser User-Agent strings are intentionally not used here.
+    """
+    headers = {
+        "User-Agent": get_api_user_agent(),
+        "Api-Key": api_key,
+        "Accept": "application/json",
+    }
+    if token:
+        headers["Authorization"] = "Bearer %s" % token
+    if content_type:
+        headers["Content-Type"] = content_type
+    return headers
+
+
+def build_browser_headers():
+    """Build headers for ordinary website or temporary-file requests."""
+    return {
+        "User-Agent": get_random_ua(),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Referer": "https://www.opensubtitles.com",
+        "Upgrade-Insecure-Requests": "1",
+        "Connection": "keep-alive",
+        "Accept-Encoding": "gzip, deflate",
+    }
 
 s = requests.Session()
 
@@ -44,42 +55,41 @@ debug_pretext = "opensubtitles.com"
 
 BASE_URL = "https://api.opensubtitles.com/api/v1"
 
-def get_opensubtitles_token():
-    """Authenticate and get JWT token using credentials from SettingsProvider."""
-    global settings_provider  # Ensure we're using the existing instance
-    
-    API_KEY = settings_provider.getSetting("OpenSubtitles_API_KEY")
-    USERNAME = settings_provider.getSetting("OpenSubtitles_username")
-    PASSWORD = settings_provider.getSetting("OpenSubtitles_password")
-    #print(f"API Key: {API_KEY}, Username: {USERNAME}, Password: {PASSWORD}")
-    if not API_KEY or not USERNAME or not PASSWORD:
+_cached_token = None
+
+
+def get_opensubtitles_token(force_refresh=False):
+    """Authenticate once and reuse the JWT token for later downloads."""
+    global settings_provider, _cached_token
+
+    if _cached_token and not force_refresh:
+        return _cached_token
+
+    api_key = settings_provider.getSetting("OpenSubtitles_API_KEY")
+    username = settings_provider.getSetting("OpenSubtitles_username")
+    password = settings_provider.getSetting("OpenSubtitles_password")
+    if not api_key or not username or not password:
         print("Error: Missing OpenSubtitles credentials.")
         return None
 
-    url = f"{BASE_URL}/login"
-    payload = {"username": USERNAME, "password": PASSWORD}
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "odemdownloader v1.0",
-        "Accept": "application/json",
-        "Api-Key": API_KEY,
-    }
+    url = "%s/login" % BASE_URL
+    payload = {"username": username, "password": password}
+    headers = build_api_headers(api_key, content_type="application/json")
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
-        data = response.json()
-        #print(f"get_token_data: {data}")
-        return data.get("token")
+        _cached_token = response.json().get("token")
+        return _cached_token
     except requests.exceptions.RequestException as e:
         print("Error getting token:", e)
         return None
 
 def get_url(url, referer=None):
     if referer is None:
-        headers = {'User-agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0'}
+        headers = {'User-agent': get_random_ua()}
     else:
-        headers = {'User-agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0', 'Referer': referer}
+        headers = {'User-agent': get_random_ua(), 'Referer': referer}
     req = Request(url, None, headers)
     response = urlopen(req)
     content = response.read().decode('utf-8')
@@ -171,17 +181,21 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
     print(f"file_id_down: {file_id}")
     url = f"{BASE_URL}/download"
     
-    headers = {
-        #"Authorization": f"Bearer {token}",
-        "User-Agent": "odemdownloader v1.0",
-        "Api-Key": API_KEY,
-        "Accept": "application/json",
-    }
+    if not token:
+        log(__name__, "Cannot download subtitle: OpenSubtitles login failed")
+        return None
+
+    headers = build_api_headers(API_KEY, token=token)
     payload = {"file_id": file_id}
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
-        #print(f"response_download: {response}")
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 401:
+            # The cached JWT can expire. Refresh it once and retry.
+            token = get_opensubtitles_token(force_refresh=True)
+            if token:
+                headers = build_api_headers(API_KEY, token=token)
+                response = requests.post(url, json=payload, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         #print(json.dumps(data, indent=4))
@@ -207,8 +221,10 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
         filmid = 0
         postparams = urlencode({'__EVENTTARGET': 's$lc$bcr$downloadLink', '__EVENTARGUMENT': '', '__VIEWSTATE': viewstate, '__PREVIOUSPAGE': previouspage, 'subtitleId': subtitleid, 'typeId': typeid, 'filmId': filmid})
         log(__name__, "%s Fetching subtitles using url with referer header '%s' and post parameters '%s'" % (debug_pretext, downloadlink, postparams))
-        response = s.get(downloadlink, data=postparams, headers=HDR, verify=False, allow_redirects=True)
+        response = s.get(downloadlink, data=postparams, headers=build_browser_headers(), verify=False, allow_redirects=True, timeout=20)
         local_tmp_file = zip_subs
+        packed = False
+        subs_file = local_tmp_file
         try:
             log(__name__, "%s Saving subtitles to '%s'" % (debug_pretext, local_tmp_file))
             if not os.path.exists(tmp_sub_dir):
@@ -245,13 +261,11 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
 
 def get_subtitles_list_movie(searchstring, languageshort, languagelong, subtitles_list):
     """Fetch subtitle list for movies from OpenSubtitles API."""
-    token = get_opensubtitles_token()
-    if not token:
-        print("Error: Failed to authenticate with OpenSubtitles API.")
-        return
-
     global settings_provider
     API_KEY = settings_provider.getSetting("OpenSubtitles_API_KEY")
+    if not API_KEY:
+        print("Error: Missing OpenSubtitles API key.")
+        return
 
     url = "https://api.opensubtitles.com/api/v1/subtitles"
     params = {
@@ -260,14 +274,10 @@ def get_subtitles_list_movie(searchstring, languageshort, languagelong, subtitle
         "languages": languageshort
     }
     print(f"params_listmovies: {params}")
-    headers = {
-        "User-Agent": "odemdownloader v1.0",
-        "Api-Key": API_KEY,
-        "Accept": "application/json",
-    }
+    headers = build_api_headers(API_KEY)
 
     try:
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
 
@@ -320,13 +330,11 @@ def get_subtitles_list_movie(searchstring, languageshort, languagelong, subtitle
 
 def get_subtitles_list_tv(searchstring, tvshow, season, episode, languageshort, languagelong, subtitles_list):
     """Fetch subtitle list for TV episodes from OpenSubtitles API."""
-    token = get_opensubtitles_token()
-    if not token:
-        print("Error: Failed to authenticate with OpenSubtitles API.")
-        return
-
     global settings_provider
     API_KEY = settings_provider.getSetting("OpenSubtitles_API_KEY")
+    if not API_KEY:
+        print("Error: Missing OpenSubtitles API key.")
+        return
 
     url = f"{BASE_URL}/subtitles"
     params = {
@@ -336,14 +344,10 @@ def get_subtitles_list_tv(searchstring, tvshow, season, episode, languageshort, 
         "episode_number": episode,
         "languages": languageshort
     }
-    headers = {
-        "User-Agent": "odemdownloader v1.0",
-        "Api-Key": API_KEY,
-        "Accept": "application/json",
-    }
+    headers = build_api_headers(API_KEY)
 
     try:
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
 

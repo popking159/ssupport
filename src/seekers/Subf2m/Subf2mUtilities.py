@@ -2,7 +2,6 @@
 
 from __future__ import absolute_import, print_function
 
-import requests
 import six
 from ..utilities import log as _log
 

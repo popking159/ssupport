@@ -12,7 +12,6 @@ import string
 import warnings
 from bs4 import BeautifulSoup
 from six.moves import html_parser
-from six.moves.urllib.request import FancyURLopener
 from six.moves.urllib.parse import quote_plus, urlencode
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning

@@ -4,10 +4,27 @@ import re, json
 from urllib.parse import quote_plus
 from ..utilities import log
 from .SubdlUtilities import get_language_info
+from ..user_agents import get_api_user_agent, get_random_ua
 from ..seeker import SubtitlesDownloadError, SubtitlesErrors
 
 SEARCH_URL = "https://api.subdl.com/api/v1/subtitles"
 DOWNLOAD_URL = "https://dl.subdl.com"
+API_TIMEOUT = 10
+DOWNLOAD_TIMEOUT = 30
+
+def build_api_headers():
+    """Return headers for SubDL REST API requests."""
+    return {
+        "User-Agent": get_api_user_agent(),
+        "Accept": "application/json",
+    }
+
+def build_download_headers():
+    """Return browser-like headers for ordinary SubDL file downloads."""
+    return {
+        "User-Agent": get_random_ua(),
+        "Accept": "application/octet-stream,*/*;q=0.8",
+    }
 
 
 
@@ -48,7 +65,7 @@ def get_subtitles_list_movie(searchstring, title, languageshort, languagelong, s
             "subs_per_page": 50
         }
 
-        response = requests.get(SEARCH_URL, params=params)
+        response = requests.get(SEARCH_URL, params=params, headers=build_api_headers(), timeout=API_TIMEOUT)
         response.raise_for_status()  # Raises exception for bad status codes
         
         json_data = response.json()
@@ -97,7 +114,7 @@ def get_subtitles_list_tv(searchstring, tvshow, season, episode, languageshort, 
             "subs_per_page": 50
         }
 
-        response = requests.get(SEARCH_URL, params=params)
+        response = requests.get(SEARCH_URL, params=params, headers=build_api_headers(), timeout=API_TIMEOUT)
         response.raise_for_status()  # Raises exception for bad status codes
         
         json_data = response.json()
@@ -182,7 +199,7 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
     subtitle_id = subtitles_list[pos]["id"]
     language = subtitles_list[pos]["language_name"]
     download_url = DOWNLOAD_URL  + subtitle_id
-    response = requests.get(download_url, stream=True)
+    response = requests.get(download_url, headers=build_download_headers(), stream=True, timeout=DOWNLOAD_TIMEOUT, allow_redirects=True)
     local_tmp_file = zip_subs
     packed = False
     subs_file = ""

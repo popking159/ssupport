@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 ##########################################
-## updated 02/01/2026 popking159(MNASR) ##
+## updated 30/10/2025 popking159(MNASR) ##
 ##########################################
 from __future__ import absolute_import
 from __future__ import print_function
 import difflib
 from .SubsourceUtilities import get_language_info
+from ..user_agents import get_api_user_agent
 from six.moves.urllib.parse import quote_plus
 import html
 import os
@@ -25,6 +26,16 @@ except ImportError:
 __api = "https://api.subsource.net/api/v1"
 __search = __api + "/movies/search"
 __getSub = __api + "/subtitles"
+API_TIMEOUT = 10
+DOWNLOAD_TIMEOUT = 30
+
+def build_api_headers(api_key):
+    """Return headers for SubSource REST API requests."""
+    return {
+        "X-API-Key": api_key,
+        "User-Agent": get_api_user_agent(),
+        "Accept": "application/json",
+    }
 
 def getsubsourceapi():
     global settings_provider  # Ensure we're using the existing instance
@@ -69,14 +80,14 @@ def search_subtitles(file_original_path, title, tvshow, year, season, episode, s
 def getSearchTitle(title, year=None):
     url = __search
     API_KEY = getsubsourceapi()
-    headers = {"X-API-Key": API_KEY}
+    headers = build_api_headers(API_KEY)
     name = prepare_search_string(title)
     params1 = {"searchType": "text", "q": name, "type": "all"}
     if year:
         params1["year"] = year
 
     try:
-        response1 = requests.get(url, params=params1, headers=headers)
+        response1 = requests.get(url, params=params1, headers=headers, timeout=API_TIMEOUT)
         response1.raise_for_status()
         response_json = response1.json()
     except Exception as e:
@@ -144,7 +155,7 @@ def search_movie(title, year, languages, filename):
         limit = 100
 
         API_KEY = getsubsourceapi()
-        headers = {"X-API-Key": API_KEY}
+        headers = build_api_headers(API_KEY)
 
         subtitles = []
 
@@ -167,7 +178,7 @@ def search_movie(title, year, languages, filename):
             }
 
             try:
-                response2 = requests.get(__getSub, params=params2, headers=headers)
+                response2 = requests.get(__getSub, params=params2, headers=headers, timeout=API_TIMEOUT)
                 if response2.status_code != 200:
                     print(("❌ HTTP Error (get subtitles):", response2.status_code, response2.text))
                     continue
@@ -210,6 +221,7 @@ def search_movie(title, year, languages, filename):
 def getSearchTvshow(tvshow_title, year=None, season=None, episode=None):
     url = __search
     API_KEY = getsubsourceapi()
+    headers = build_api_headers(API_KEY)
     name = prepare_search_string(tvshow_title)
     params1 = {"searchType": "text", "q": name, "type": "tvseries"}
     if year:
@@ -218,7 +230,7 @@ def getSearchTvshow(tvshow_title, year=None, season=None, episode=None):
         params1["season"] = season
 
     try:
-        response1 = requests.get(url, params=params1, headers=headers)
+        response1 = requests.get(url, params=params1, headers=headers, timeout=API_TIMEOUT)
         response1.raise_for_status()
         response_json = response1.json()
     except Exception as e:
@@ -286,7 +298,7 @@ def search_tvshow(tvshow, year, season, episode, languages, filename):
         limit = 100
 
         API_KEY = getsubsourceapi()
-        headers = {"X-API-Key": API_KEY}
+        headers = build_api_headers(API_KEY)
 
         subtitles = []
 
@@ -309,7 +321,7 @@ def search_tvshow(tvshow, year, season, episode, languages, filename):
             }
 
             try:
-                response2 = requests.get(__getSub, params=params2, headers=headers)
+                response2 = requests.get(__getSub, params=params2, headers=headers, timeout=API_TIMEOUT)
                 if response2.status_code != 200:
                     print(("❌ HTTP Error (get subtitles):", response2.status_code, response2.text))
                     continue
@@ -371,12 +383,12 @@ def download_subtitles(subtitles_list, pos, zip_subs, tmp_sub_dir, sub_folder, s
         localtmpfile = os.path.join(tmp_sub_dir, safe)
 
         APIKEY = getsubsourceapi()
-        headers = {"X-API-Key": APIKEY}
+        headers = build_api_headers(APIKEY)
 
         __getSubdown = __getSub + "/" + str(sub_id) + "/download"
         print("⬇️ Download URL:", __getSubdown)
 
-        response = requests.get(__getSubdown, headers=headers, verify=False, allow_redirects=True, timeout=30)
+        response = requests.get(__getSubdown, headers=headers, verify=False, allow_redirects=True, timeout=DOWNLOAD_TIMEOUT)
         if response.status_code != 200:
             print("❌ HTTP Error download:", response.status_code, response.text)
             return False, language, ""
