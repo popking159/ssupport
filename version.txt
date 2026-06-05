@@ -1,2 +1,2 @@
-version='1.8.0.09'
-description='* fixes tmdb search .\n* add subviewer parser .\n* fix suggestions by adding opensubtitles api provider and the IMDb provider , you can enable , disable suggestions .\n* fix some screens .\n* fix dynamic background .'
+version='1.8.0.10'
+description='* improve subtitle picker screen .\n* add Wyzie provider - Free API key is required .'
